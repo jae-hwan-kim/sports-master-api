@@ -69,14 +69,14 @@ export class CreateUserDto {
 
 - `@ApiTags()` 필수 — Swagger 그룹핑
 - `@ApiOperation()` 필수 — 엔드포인트 설명
-- `@ApiResponse()` 명시 권장
+- **응답 타입은 `@ApiDataResponse(Dto)` 필수** — `@ApiResponse({ type })` 직접 사용 금지 (아래 응답 포맷 참고)
 
 ```typescript
 @ApiTags('users')
 @Controller('users')
 export class UserController {
   @ApiOperation({ summary: '사용자 생성' })
-  @ApiResponse({ status: 201, type: UserResponseDto })
+  @ApiDataResponse(UserResponseDto)
   @Post()
   create(@Body() dto: CreateUserDto) {
     return this.userService.create(dto);
@@ -84,12 +84,20 @@ export class UserController {
 }
 ```
 
-### 응답 포맷
+### 응답 포맷 (필수 규약)
 
-전역 `ResponseInterceptor`가 자동으로 `{ data: T }` 래핑
+전역 `ResponseInterceptor`가 모든 성공 응답을 `{ data: T }`로 래핑 (`APP_INTERCEPTOR`로 등록).
 
 - 성공: `{ data: T }`
 - 실패: `{ statusCode, message, path, timestamp }` (GlobalExceptionFilter 처리)
+
+**중요**: 런타임은 `{ data: T }`인데 Swagger에 unwrapped `T`만 노출하면 프론트 생성 타입이 실제 응답과 어긋난다.
+반드시 `@ApiDataResponse()`(`src/common/decorators/api-data-response.decorator.ts`)로 래퍼를 스펙에 반영할 것.
+
+```typescript
+@ApiDataResponse(UserResponseDto)                 // → { data: UserResponseDto }
+@ApiDataResponse(UserResponseDto, { isArray: true }) // → { data: UserResponseDto[] }
+```
 
 ### 환경변수
 
@@ -165,6 +173,7 @@ pnpm generate-types  # http://localhost:3000/swagger-yaml → src/types/schema.t
 ```
 □ DTO에 @ApiProperty() 전부 작성
 □ 컨트롤러에 @ApiTags(), @ApiOperation() 작성
+□ 응답에 @ApiDataResponse(Dto) — 래퍼 스펙 반영
 □ ConfigService로만 환경변수 접근
 □ lint 통과 (pnpm lint)
 □ 빌드 통과 (pnpm build)

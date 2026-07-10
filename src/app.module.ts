@@ -1,9 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { WinstonModule } from 'nest-winston';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { loggerConfig } from './config/logger.config';
 
 @Module({
@@ -27,6 +29,6 @@ import { loggerConfig } from './config/logger.config';
     }),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, { provide: APP_INTERCEPTOR, useClass: ResponseInterceptor }],
 })
 export class AppModule {}

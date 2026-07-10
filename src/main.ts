@@ -29,11 +29,7 @@ async function bootstrap() {
   app.useGlobalFilters(new GlobalExceptionFilter());
 
   // Swagger
-  const config = new DocumentBuilder()
-    .setTitle('Sports Master API')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
+  const config = new DocumentBuilder().setTitle('Sports Master API').setVersion('1.0').addBearerAuth().build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('swagger', app, document);
 
