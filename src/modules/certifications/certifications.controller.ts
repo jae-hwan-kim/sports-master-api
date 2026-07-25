@@ -1,6 +1,18 @@
 import { existsSync, mkdirSync } from 'fs';
 import { extname, join } from 'path';
-import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Req, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Req,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { diskStorage } from 'multer';
@@ -33,12 +45,17 @@ export class CertificationsController {
     FileInterceptor('file', {
       storage: diskStorage({
         destination: uploadDir,
-        filename: (_req, file, cb) => cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}${extname(file.originalname)}`),
+        filename: (_req, file, cb) =>
+          cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}${extname(file.originalname)}`),
       }),
     }),
   )
   @Post()
-  create(@Req() req: AuthenticatedRequest, @Body() dto: CreateCertificationDto, @UploadedFile() file: Express.Multer.File) {
+  create(
+    @Req() req: AuthenticatedRequest,
+    @Body() dto: CreateCertificationDto,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
     return this.certificationsService.create(req.user.id, dto, file);
   }
 

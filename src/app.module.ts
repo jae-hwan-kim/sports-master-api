@@ -9,6 +9,7 @@ import { ResponseInterceptor } from './common/interceptors/response.interceptor'
 import { loggerConfig } from './config/logger.config';
 import { AuthModule } from './modules/auth/auth.module';
 import { CertificationsModule } from './modules/certifications/certifications.module';
+import { HomeModule } from './modules/home/home.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { CertificationsModule } from './modules/certifications/certifications.mo
     }),
     AuthModule,
     CertificationsModule,
+    HomeModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_INTERCEPTOR, useClass: ResponseInterceptor }],

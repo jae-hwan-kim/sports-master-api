@@ -7,7 +7,11 @@ import { Repository } from 'typeorm';
 import { ExpertProfile } from '../expert-profiles/expert-profile.entity';
 import { Certification, CertificationReviewStatus, CertificationType } from './certification.entity';
 import { CertificationResponseDto } from './dto/certification-response.dto';
-import { CreateCertificationDto, CertificationType as CreateCertificationType, LicenseType } from './dto/create-certification.dto';
+import {
+  CreateCertificationDto,
+  CertificationType as CreateCertificationType,
+  LicenseType,
+} from './dto/create-certification.dto';
 import { UpdateCertificationStatusDto } from './dto/update-certification-status.dto';
 
 @Injectable()
@@ -18,7 +22,11 @@ export class CertificationsService {
     private readonly config: ConfigService,
   ) {}
 
-  async create(userId: number, dto: CreateCertificationDto, file: Express.Multer.File): Promise<CertificationResponseDto> {
+  async create(
+    userId: number,
+    dto: CreateCertificationDto,
+    file: Express.Multer.File,
+  ): Promise<CertificationResponseDto> {
     if (!file) {
       throw new BadRequestException('첨부 파일이 필요합니다.');
     }
