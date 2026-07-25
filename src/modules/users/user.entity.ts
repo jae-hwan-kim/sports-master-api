@@ -19,6 +19,7 @@ export enum AuthProvider {
   LOCAL = 'local',
   KAKAO = 'kakao',
   APPLE = 'apple',
+  GOOGLE = 'google',
 }
 
 export enum UserMode {
