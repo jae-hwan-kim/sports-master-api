@@ -58,7 +58,6 @@ export class CertificationsService {
   }
 
   async findAll(): Promise<CertificationResponseDto[]> {
-    // TODO: 관리자 권한 체크(role 모델 미도입) — 현재는 JwtAuthGuard로만 보호
     const certifications = await this.certificationRepository.find();
     return certifications.map(c => this.toResponseDto(c));
   }

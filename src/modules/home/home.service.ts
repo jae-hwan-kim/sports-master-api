@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { requireEnv } from '../../common/config/require-env';
 import { ChatRoom } from '../chat-rooms/chat-room.entity';
 import { DiagnosisRequest, DiagnosisStatus } from '../diagnoses/diagnosis-request.entity';
 import { DiagnosisIncomingItemDto } from '../diagnoses/dto/diagnosis-response.dto';
@@ -60,7 +61,7 @@ export class HomeService {
     const reviewToken = await this.jwtService.signAsync(
       { chatRoomId: chatRoom.id },
       {
-        secret: this.config.get<string>('JWT_ACCESS_SECRET') ?? 'dev-access-secret',
+        secret: requireEnv(this.config, 'JWT_ACCESS_SECRET'),
         expiresIn: REVIEW_REQUEST_TOKEN_EXPIRES_IN as unknown as number,
       },
     );

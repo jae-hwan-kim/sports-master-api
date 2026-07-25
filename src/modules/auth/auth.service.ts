@@ -8,6 +8,7 @@ import { OAuth2Client } from 'google-auth-library';
 import * as jwt from 'jsonwebtoken';
 import { JwksClient } from 'jwks-rsa';
 import { Repository } from 'typeorm';
+import { requireEnv } from '../../common/config/require-env';
 import { AuthProvider, User, UserMode } from '../users/user.entity';
 import { RefreshToken } from './refresh-token.entity';
 import { AppleLoginDto } from './dto/apple-login.dto';
@@ -189,6 +190,13 @@ export class AuthService {
     });
     let isNewUser = false;
 
+    if (!user && params.email) {
+      const existingByEmail = await this.userRepository.findOne({ where: { email: params.email } });
+      if (existingByEmail) {
+        throw new ConflictException('이미 다른 방식으로 가입된 이메일입니다. 기존 로그인 방식을 이용해주세요.');
+      }
+    }
+
     if (!user) {
       user = await this.userRepository.save(
         this.userRepository.create({
@@ -209,12 +217,12 @@ export class AuthService {
   private async issueTokens(user: User): Promise<AuthTokenResponseDto> {
     const payload = { sub: user.id, currentMode: user.currentMode };
     const accessToken = await this.jwtService.signAsync(payload, {
-      secret: this.config.get<string>('JWT_ACCESS_SECRET') ?? 'dev-access-secret',
+      secret: requireEnv(this.config, 'JWT_ACCESS_SECRET'),
       expiresIn: (this.config.get<string>('JWT_ACCESS_EXPIRES_IN') ?? '1h') as unknown as number,
     });
     const refreshTokenExpiresIn = this.config.get<string>('JWT_REFRESH_EXPIRES_IN') ?? '30d';
     const refreshToken = await this.jwtService.signAsync(payload, {
-      secret: this.config.get<string>('JWT_REFRESH_SECRET') ?? 'dev-refresh-secret',
+      secret: requireEnv(this.config, 'JWT_REFRESH_SECRET'),
       expiresIn: refreshTokenExpiresIn as unknown as number,
     });
 

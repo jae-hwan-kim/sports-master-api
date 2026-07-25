@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync } from 'fs';
 import { extname, join } from 'path';
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -17,6 +18,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { diskStorage } from 'multer';
 import { ApiDataResponse } from '../../common/decorators/api-data-response.decorator';
+import { AdminGuard } from '../../common/guards/admin-guard';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CertificationsService } from './certifications.service';
 import { CertificationResponseDto } from './dto/certification-response.dto';
@@ -31,6 +33,8 @@ const uploadDir = join(process.cwd(), process.env.UPLOAD_DIR ?? 'uploads', 'cert
 if (!existsSync(uploadDir)) {
   mkdirSync(uploadDir, { recursive: true });
 }
+
+const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'application/pdf']);
 
 @ApiTags('certifications')
 @Controller('certifications')
@@ -48,6 +52,13 @@ export class CertificationsController {
         filename: (_req, file, cb) =>
           cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}${extname(file.originalname)}`),
       }),
+      fileFilter: (_req, file, cb) => {
+        if (!ALLOWED_MIME_TYPES.has(file.mimetype)) {
+          cb(new BadRequestException('이미지(jpg/png/webp) 또는 PDF 파일만 업로드할 수 있습니다.'), false);
+          return;
+        }
+        cb(null, true);
+      },
     }),
   )
   @Post()
@@ -68,6 +79,7 @@ export class CertificationsController {
 
   @ApiOperation({ summary: '[관리자] 전체 자격증 검수 목록' })
   @ApiDataResponse(CertificationResponseDto, { isArray: true })
+  @UseGuards(AdminGuard)
   @Get()
   findAll() {
     return this.certificationsService.findAll();
@@ -75,6 +87,7 @@ export class CertificationsController {
 
   @ApiOperation({ summary: '[관리자] 자격증 검수 상태 변경' })
   @ApiDataResponse(CertificationResponseDto)
+  @UseGuards(AdminGuard)
   @Patch(':id/status')
   updateStatus(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateCertificationStatusDto) {
     return this.certificationsService.updateStatus(id, dto);
