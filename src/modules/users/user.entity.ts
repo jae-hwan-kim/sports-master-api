@@ -62,6 +62,17 @@ export class User {
   @Column({ default: true })
   isActive: boolean;
 
+  // 모드(명인/고객)를 실제로 확정했는지 — register()는 항상 명시적 mode와 함께 true로 생성되고,
+  // 소셜 로그인으로 생성된 계정은 모드선택 전까지 false로 남아있어 재진입 시 모드선택 화면으로
+  // 다시 보내야 하는지 판단하는 데 쓰인다.
+  @Column({ default: false })
+  hasSelectedMode: boolean;
+
+  // 자격증 이미지 업로드 여부 — 추후 "검증된 명인" 뱃지 등에 사용 예정.
+  // ExpertProfile이 아직 생성 불가능한 상태라 이번 단계에서는 실제로 true로 갱신하는 로직은 없음.
+  @Column({ default: false })
+  hasSubmittedCertification: boolean;
+
   @Column({ type: 'timestamp', nullable: true, default: null })
   lastReviewStatShownAt: Date | null;
 
