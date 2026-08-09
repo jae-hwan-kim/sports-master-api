@@ -1,5 +1,18 @@
-import { Body, Controller, Delete, HttpCode, HttpStatus, Post, Req, UseGuards } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Query,
+  Req,
+  Res,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
+import { ApiExcludeEndpoint, ApiOperation, ApiTags } from '@nestjs/swagger';
+import type { Response } from 'express';
 import { ApiDataResponse } from '../../common/decorators/api-data-response.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { AuthService } from './auth.service';
@@ -47,6 +60,15 @@ export class AuthController {
   @Post('kakao')
   kakaoLogin(@Body() dto: KakaoLoginDto) {
     return this.authService.kakaoLogin(dto);
+  }
+
+  // 카카오 Redirect URI는 http(s)만 등록 가능해 앱의 커스텀 스킴(sportsmaster://)을 직접 쓸 수
+  // 없다. 이 엔드포인트가 그 중계 역할 — 카카오가 여기로 code를 넘기면 앱 스킴으로 302 리다이렉트해
+  // WebBrowser.openAuthSessionAsync가 이를 감지하고 code를 프론트로 돌려주게 한다.
+  @ApiExcludeEndpoint()
+  @Get('kakao/callback')
+  kakaoCallback(@Query('code') code: string, @Res() res: Response) {
+    res.redirect(`sportsmaster://oauth/kakao?code=${encodeURIComponent(code ?? '')}`);
   }
 
   @ApiOperation({ summary: '애플 OAuth 로그인/회원가입 (iOS 필수)' })
