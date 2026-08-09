@@ -73,6 +73,7 @@ export class AuthService {
   }
 
   async kakaoLogin(dto: KakaoLoginDto): Promise<OAuthTokenResponseDto> {
+    const clientSecret = this.config.get<string>('KAKAO_CLIENT_SECRET');
     const tokenRes = await fetch('https://kauth.kakao.com/oauth/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -81,9 +82,13 @@ export class AuthService {
         client_id: this.config.get<string>('KAKAO_REST_API_KEY') ?? '',
         redirect_uri: this.config.get<string>('KAKAO_REDIRECT_URI') ?? '',
         code: dto.code,
+        // 콘솔에서 "카카오 로그인" 클라이언트 시크릿을 활성화한 경우에만 필수
+        ...(clientSecret ? { client_secret: clientSecret } : {}),
       }),
     });
     if (!tokenRes.ok) {
+      const errorBody = await tokenRes.text().catch(() => '');
+      this.logger.warn(`카카오 토큰 교환 실패 (${tokenRes.status}): ${errorBody}`);
       throw new UnauthorizedException('카카오 인가코드 검증에 실패했습니다.');
     }
     const { access_token: kakaoAccessToken } = (await tokenRes.json()) as { access_token: string };
