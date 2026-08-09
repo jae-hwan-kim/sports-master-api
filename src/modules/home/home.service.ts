@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -100,17 +100,13 @@ export class HomeService {
       throw new NotFoundException('사용자를 찾을 수 없습니다.');
     }
 
+    // ExpertProfile 생성 경로가 아직 없어(자격증 인증 체계 별도 작업 예정) register()와 동일하게
+    // 관대히 허용한다 — 명인 프로필 존재 검증은 그 체계가 생기면 다시 추가한다.
     const targetMode = dto.mode as unknown as UserMode;
-    if (targetMode === UserMode.EXPERT) {
-      const expertProfile = await this.expertProfileRepository.findOne({ where: { userId } });
-      if (!expertProfile) {
-        throw new BadRequestException('명인 프로필이 없어 명인 모드로 전환할 수 없습니다.');
-      }
-    }
-
     user.currentMode = targetMode;
+    user.hasSelectedMode = true;
     await this.userRepository.save(user);
-    return { currentMode: user.currentMode };
+    return { currentMode: user.currentMode, hasSelectedMode: user.hasSelectedMode };
   }
 
   private async getExpertProfileOrThrow(userId: number): Promise<ExpertProfile> {

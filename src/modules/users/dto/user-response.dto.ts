@@ -29,4 +29,7 @@ export class UserResponseDto {
 export class UpdateModeResponseDto {
   @ApiProperty({ description: '변경된 모드', enum: ['expert', 'customer'], example: 'expert' })
   currentMode: string;
+
+  @ApiProperty({ description: '모드를 명시적으로 확정했는지 여부', example: true })
+  hasSelectedMode: boolean;
 }
