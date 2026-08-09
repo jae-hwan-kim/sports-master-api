@@ -1,5 +1,5 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsNotEmpty, IsOptional } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsEnum, IsOptional } from 'class-validator';
 
 export enum CertificationType {
   LICENSE = 'license',
@@ -12,10 +12,10 @@ export enum LicenseType {
 }
 
 export class CreateCertificationDto {
-  @ApiProperty({ description: '자격증 종류', enum: CertificationType, example: CertificationType.LICENSE })
+  @ApiPropertyOptional({ description: '자격증 종류', enum: CertificationType, example: CertificationType.LICENSE })
   @IsEnum(CertificationType)
-  @IsNotEmpty()
-  type: CertificationType;
+  @IsOptional()
+  type?: CertificationType;
 
   @ApiPropertyOptional({
     description: '자격증 세부 종류 (type=license 시)',

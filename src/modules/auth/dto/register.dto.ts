@@ -1,5 +1,5 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsEnum, IsNotEmpty, IsString, MinLength } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 
 export enum UserMode {
   EXPERT = 'expert',
@@ -12,24 +12,25 @@ export class RegisterDto {
   @IsNotEmpty()
   email: string;
 
-  @ApiProperty({ description: '비밀번호 (최소 8자)', example: 'P@ssw0rd!' })
+  @ApiProperty({ description: '비밀번호 (8~12자, 특수문자 사용 가능)', example: 'P@ssw0rd!' })
   @IsString()
   @IsNotEmpty()
   @MinLength(8)
+  @MaxLength(12)
   password: string;
 
-  @ApiProperty({ description: '이름', example: '김운동' })
+  @ApiProperty({ description: '닉네임', example: '김운동' })
   @IsString()
   @IsNotEmpty()
-  name: string;
+  nickname: string;
 
-  @ApiProperty({ description: '전화번호', example: '010-1234-5678' })
+  @ApiPropertyOptional({ description: '전화번호', example: '010-1234-5678' })
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  phone: string;
+  phone?: string;
 
-  @ApiProperty({ description: '가입 모드', enum: UserMode, example: UserMode.CUSTOMER })
+  @ApiPropertyOptional({ description: '가입 모드 (미입력 시 customer)', enum: UserMode, example: UserMode.CUSTOMER })
+  @IsOptional()
   @IsEnum(UserMode)
-  @IsNotEmpty()
-  mode: UserMode;
+  mode?: UserMode;
 }
