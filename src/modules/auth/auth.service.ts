@@ -45,10 +45,12 @@ export class AuthService {
       this.userRepository.create({
         email: dto.email,
         password: hashedPassword,
-        nickname: dto.name,
-        phoneNumber: dto.phone,
+        nickname: dto.nickname,
+        phoneNumber: dto.phone ?? null,
         authProvider: AuthProvider.LOCAL,
-        currentMode: dto.mode as unknown as UserMode,
+        currentMode: (dto.mode as unknown as UserMode) ?? UserMode.CUSTOMER,
+        // register()는 앱에서 항상 SignUpRoleSelect에서 명시적으로 고른 mode와 함께 호출됨
+        hasSelectedMode: true,
         personalCode: await this.generatePersonalCode(),
       }),
     );
@@ -241,6 +243,8 @@ export class AuthService {
       personalCode: user.personalCode,
       currentMode: user.currentMode,
       socialProvider: user.authProvider,
+      hasSelectedMode: user.hasSelectedMode,
+      hasSubmittedCertification: user.hasSubmittedCertification,
     };
 
     return { user: authUser, accessToken, refreshToken };

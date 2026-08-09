@@ -16,8 +16,14 @@ export class AuthUserDto {
   @ApiProperty({ description: '현재 모드', enum: ['expert', 'customer'], example: 'customer' })
   currentMode: string;
 
-  @ApiProperty({ description: '소셜 제공자', enum: ['local', 'kakao', 'apple'], example: 'local' })
+  @ApiProperty({ description: '소셜 제공자', enum: ['local', 'kakao', 'apple', 'google'], example: 'local' })
   socialProvider: string;
+
+  @ApiProperty({ description: '모드를 명시적으로 확정했는지 여부(false면 모드선택 필요)', example: true })
+  hasSelectedMode: boolean;
+
+  @ApiProperty({ description: '자격증 이미지 업로드 여부', example: false })
+  hasSubmittedCertification: boolean;
 }
 
 export class AuthTokenResponseDto {
