@@ -47,6 +47,7 @@ export class HomeService {
       careerText: expertProfile.careerText,
       educationPdfUrl: expertProfile.educationPdfUrl,
       createdAt: expertProfile.createdAt,
+      topPercentile: null,
       updatedAt: expertProfile.updatedAt,
     };
   }

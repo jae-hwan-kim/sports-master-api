@@ -53,6 +53,9 @@ export class ExpertProfileResponseDto {
   @ApiPropertyOptional({ description: '학력 PDF URL', example: 'https://cdn.example.com/edu/1.pdf' })
   educationPdfUrl: string | null;
 
+  @ApiPropertyOptional({ description: '리뷰 수 기준 상위 백분위 (전체 명인 중 상위 N%)', example: 15 })
+  topPercentile: number | null;
+
   @ApiProperty({ description: '생성일', example: '2024-01-15T09:00:00.000Z' })
   createdAt: Date;
 
