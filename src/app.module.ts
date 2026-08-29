@@ -9,6 +9,7 @@ import { ResponseInterceptor } from './common/interceptors/response.interceptor'
 import { loggerConfig } from './config/logger.config';
 import { AuthModule } from './modules/auth/auth.module';
 import { CertificationsModule } from './modules/certifications/certifications.module';
+import { DiagnosesModule } from './modules/diagnoses/diagnoses.module';
 import { ExpertProfilesModule } from './modules/expert-profiles/expert-profiles.module';
 import { HomeModule } from './modules/home/home.module';
 import { UsersModule } from './modules/users/users.module';
@@ -34,6 +35,7 @@ import { UsersModule } from './modules/users/users.module';
     }),
     AuthModule,
     CertificationsModule,
+    DiagnosesModule,
     ExpertProfilesModule,
     HomeModule,
     UsersModule,
