@@ -8,9 +8,7 @@ import { ExpertProfile } from './expert-profile.entity';
 
 @Injectable()
 export class ExpertProfilesService {
-  constructor(
-    @InjectRepository(ExpertProfile) private readonly expertProfileRepository: Repository<ExpertProfile>,
-  ) {}
+  constructor(@InjectRepository(ExpertProfile) private readonly expertProfileRepository: Repository<ExpertProfile>) {}
 
   async create(userId: number, dto: CreateExpertProfileDto): Promise<ExpertProfileResponseDto> {
     const existing = await this.expertProfileRepository.findOne({ where: { userId } });
