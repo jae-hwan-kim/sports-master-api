@@ -83,13 +83,18 @@ export class HomeService {
 
     return requests.map(r => ({
       id: r.id,
+      status: r.status,
       customerProfile: {
-        region: r.customerRegion ?? '',
-        gender: r.customerGender,
+        personalCode: r.customerPersonalCode,
+        nickname: null,
+        profileImageUrl: null,
         name: r.customerName,
         age: r.customerAge,
+        gender: r.customerGender,
+        region: r.customerRegion ?? null,
         sport: r.mainSport,
-        personalCode: r.customerPersonalCode,
+        keywordTags: null,
+        introduction: null,
       },
       createdAt: r.createdAt,
     }));
