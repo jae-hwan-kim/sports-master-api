@@ -9,7 +9,9 @@ import { ResponseInterceptor } from './common/interceptors/response.interceptor'
 import { loggerConfig } from './config/logger.config';
 import { AuthModule } from './modules/auth/auth.module';
 import { CertificationsModule } from './modules/certifications/certifications.module';
+import { ExpertProfilesModule } from './modules/expert-profiles/expert-profiles.module';
 import { HomeModule } from './modules/home/home.module';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
@@ -32,7 +34,9 @@ import { HomeModule } from './modules/home/home.module';
     }),
     AuthModule,
     CertificationsModule,
+    ExpertProfilesModule,
     HomeModule,
+    UsersModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_INTERCEPTOR, useClass: ResponseInterceptor }],
