@@ -34,10 +34,27 @@ export class AuthService {
     private readonly config: ConfigService,
   ) {}
 
+  async checkNickname(nickname: string): Promise<{ available: boolean }> {
+    if (!nickname) return { available: false };
+    const user = await this.userRepository.findOne({ where: { nickname } });
+    return { available: !user };
+  }
+
+  async checkEmail(email: string): Promise<{ available: boolean }> {
+    if (!email) return { available: false };
+    const user = await this.userRepository.findOne({ where: { email } });
+    return { available: !user };
+  }
+
   async register(dto: RegisterDto): Promise<AuthTokenResponseDto> {
     const existing = await this.userRepository.findOne({ where: { email: dto.email } });
     if (existing) {
       throw new ConflictException('이미 가입된 이메일입니다.');
+    }
+
+    const existingNickname = await this.userRepository.findOne({ where: { nickname: dto.nickname } });
+    if (existingNickname) {
+      throw new ConflictException('이미 사용중인 닉네임입니다.');
     }
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
@@ -80,7 +97,7 @@ export class AuthService {
       body: new URLSearchParams({
         grant_type: 'authorization_code',
         client_id: this.config.get<string>('KAKAO_REST_API_KEY') ?? '',
-        redirect_uri: this.config.get<string>('KAKAO_REDIRECT_URI') ?? '',
+        redirect_uri: dto.redirectUri,
         code: dto.code,
         // 콘솔에서 "카카오 로그인" 클라이언트 시크릿을 활성화한 경우에만 필수
         ...(clientSecret ? { client_secret: clientSecret } : {}),
@@ -132,12 +149,16 @@ export class AuthService {
   }
 
   async googleLogin(dto: GoogleLoginDto): Promise<OAuthTokenResponseDto> {
-    const client = new OAuth2Client(this.config.get<string>('GOOGLE_CLIENT_ID'));
-    const ticket = await client
-      .verifyIdToken({ idToken: dto.idToken, audience: this.config.get<string>('GOOGLE_CLIENT_ID') })
-      .catch(() => {
-        throw new UnauthorizedException('유효하지 않은 구글 idToken입니다.');
-      });
+    // iOS/Android는 플랫폼별로 별도 OAuth 클라이언트 ID를 쓰므로(각각 다른 aud 클레임으로
+    // idToken이 발급됨) 둘 다 유효한 audience로 허용해야 한다.
+    const validAudiences = [
+      this.config.get<string>('GOOGLE_CLIENT_ID'),
+      this.config.get<string>('GOOGLE_ANDROID_CLIENT_ID'),
+    ].filter((id): id is string => Boolean(id));
+    const client = new OAuth2Client();
+    const ticket = await client.verifyIdToken({ idToken: dto.idToken, audience: validAudiences }).catch(() => {
+      throw new UnauthorizedException('유효하지 않은 구글 idToken입니다.');
+    });
     const payload = ticket.getPayload();
     if (!payload?.sub) {
       throw new UnauthorizedException('구글 사용자 정보를 확인할 수 없습니다.');

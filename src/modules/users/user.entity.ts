@@ -56,7 +56,7 @@ export class User {
   @Column({ nullable: true })
   profileImageUrl: string | null;
 
-  @Column({ nullable: true })
+  @Column({ unique: true, nullable: true })
   nickname: string | null;
 
   @Column({ default: true })

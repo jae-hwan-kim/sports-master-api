@@ -19,6 +19,7 @@ import { AuthService } from './auth.service';
 import { AppleLoginDto } from './dto/apple-login.dto';
 import {
   AuthTokenResponseDto,
+  AvailabilityResponseDto,
   MessageResponseDto,
   OAuthTokenResponseDto,
   TokenRefreshResponseDto,
@@ -38,6 +39,20 @@ interface AuthenticatedRequest {
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
+
+  @ApiOperation({ summary: '닉네임 사용가능 여부 확인' })
+  @ApiDataResponse(AvailabilityResponseDto)
+  @Get('check-nickname')
+  checkNickname(@Query('nickname') nickname: string) {
+    return this.authService.checkNickname(nickname);
+  }
+
+  @ApiOperation({ summary: '이메일 사용가능 여부 확인' })
+  @ApiDataResponse(AvailabilityResponseDto)
+  @Get('check-email')
+  checkEmail(@Query('email') email: string) {
+    return this.authService.checkEmail(email);
+  }
 
   @ApiOperation({ summary: '일반 회원가입 (이메일/비밀번호)' })
   @ApiDataResponse(AuthTokenResponseDto)

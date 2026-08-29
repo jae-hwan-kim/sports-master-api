@@ -54,3 +54,8 @@ export class MessageResponseDto {
   @ApiProperty({ description: '결과 메시지', example: '로그아웃되었습니다.' })
   message: string;
 }
+
+export class AvailabilityResponseDto {
+  @ApiProperty({ description: '사용 가능 여부', example: true })
+  available: boolean;
+}
