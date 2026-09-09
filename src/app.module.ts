@@ -12,6 +12,7 @@ import { CertificationsModule } from './modules/certifications/certifications.mo
 import { DiagnosesModule } from './modules/diagnoses/diagnoses.module';
 import { ExpertProfilesModule } from './modules/expert-profiles/expert-profiles.module';
 import { HomeModule } from './modules/home/home.module';
+import { ReviewsModule } from './modules/reviews/reviews.module';
 import { UsersModule } from './modules/users/users.module';
 
 @Module({
@@ -38,6 +39,7 @@ import { UsersModule } from './modules/users/users.module';
     DiagnosesModule,
     ExpertProfilesModule,
     HomeModule,
+    ReviewsModule,
     UsersModule,
   ],
   controllers: [AppController],

@@ -5,12 +5,14 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToOne,
+  OneToMany,
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
 import { ChatRoom } from '../chat-rooms/chat-room.entity';
 import { ExpertProfile } from '../expert-profiles/expert-profile.entity';
 import { User } from '../users/user.entity';
+import { ReviewDeleteRequest } from './review-delete-request.entity';
 
 @Entity('reviews')
 export class Review {
@@ -28,6 +30,12 @@ export class Review {
 
   @Column({ type: 'int' })
   rating: number;
+
+  @Column({ type: 'text', nullable: true })
+  comment: string | null;
+
+  @Column({ type: 'jsonb', default: [] })
+  imageUrls: string[];
 
   @Column({ unique: true, nullable: true })
   kakaoReviewToken: string | null;
@@ -49,4 +57,7 @@ export class Review {
   @ManyToOne(() => User, u => u.reviews)
   @JoinColumn({ name: 'customerId' })
   customer: User;
+
+  @OneToMany(() => ReviewDeleteRequest, dr => dr.review)
+  deleteRequests: ReviewDeleteRequest[];
 }
