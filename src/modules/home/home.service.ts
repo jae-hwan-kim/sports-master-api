@@ -46,6 +46,9 @@ export class HomeService {
       keywordTags: expertProfile.keywordTags,
       careerText: expertProfile.careerText,
       educationPdfUrl: expertProfile.educationPdfUrl,
+      imageUrls: expertProfile.imageUrls ?? [],
+      certificateUrls: expertProfile.certificateUrls ?? [],
+      centerInfoUrl: expertProfile.centerInfoUrl ?? null,
       createdAt: expertProfile.createdAt,
       topPercentile: null,
       updatedAt: expertProfile.updatedAt,
@@ -84,6 +87,7 @@ export class HomeService {
     return requests.map(r => ({
       id: r.id,
       status: r.status,
+      isViewed: r.isViewed,
       customerProfile: {
         personalCode: r.customerPersonalCode,
         nickname: null,

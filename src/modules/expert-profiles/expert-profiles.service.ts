@@ -1,14 +1,18 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateExpertProfileDto } from './dto/create-expert-profile.dto';
-import { ExpertProfileResponseDto } from './dto/expert-profile-response.dto';
+import { ExpertProfileResponseDto, ImageUploadResponseDto } from './dto/expert-profile-response.dto';
 import { UpdateExpertProfileDto } from './dto/update-expert-profile.dto';
 import { ExpertProfile } from './expert-profile.entity';
 
 @Injectable()
 export class ExpertProfilesService {
-  constructor(@InjectRepository(ExpertProfile) private readonly expertProfileRepository: Repository<ExpertProfile>) {}
+  constructor(
+    @InjectRepository(ExpertProfile) private readonly expertProfileRepository: Repository<ExpertProfile>,
+    private readonly configService: ConfigService,
+  ) {}
 
   async create(userId: number, dto: CreateExpertProfileDto): Promise<ExpertProfileResponseDto> {
     const existing = await this.expertProfileRepository.findOne({ where: { userId } });
@@ -46,6 +50,39 @@ export class ExpertProfilesService {
     return this.toDto(saved);
   }
 
+  async uploadImages(userId: number, files: Express.Multer.File[]): Promise<ImageUploadResponseDto> {
+    const profile = await this.expertProfileRepository.findOne({ where: { userId } });
+    if (!profile) throw new NotFoundException('명인 프로필이 없습니다.');
+
+    const cdnBase = this.configService.get<string>('CDN_BASE_URL', 'https://cdn.sportsmaster.app');
+    const newUrls = files.map(f => `${cdnBase}/expert/${userId}/images/${Date.now()}-${f.originalname}`);
+    profile.imageUrls = [...(profile.imageUrls ?? []), ...newUrls];
+    await this.expertProfileRepository.save(profile);
+    return { imageUrls: profile.imageUrls };
+  }
+
+  async deleteImage(userId: number, index: number): Promise<ImageUploadResponseDto> {
+    const profile = await this.expertProfileRepository.findOne({ where: { userId } });
+    if (!profile) throw new NotFoundException('명인 프로필이 없습니다.');
+
+    const urls = profile.imageUrls ?? [];
+    if (index < 0 || index >= urls.length) throw new NotFoundException('해당 인덱스의 이미지가 없습니다.');
+    profile.imageUrls = urls.filter((_, i) => i !== index);
+    await this.expertProfileRepository.save(profile);
+    return { imageUrls: profile.imageUrls };
+  }
+
+  async uploadCertificates(userId: number, files: Express.Multer.File[]): Promise<ImageUploadResponseDto> {
+    const profile = await this.expertProfileRepository.findOne({ where: { userId } });
+    if (!profile) throw new NotFoundException('명인 프로필이 없습니다.');
+
+    const cdnBase = this.configService.get<string>('CDN_BASE_URL', 'https://cdn.sportsmaster.app');
+    const newUrls = files.map(f => `${cdnBase}/expert/${userId}/certs/${Date.now()}-${f.originalname}`);
+    profile.certificateUrls = [...(profile.certificateUrls ?? []), ...newUrls];
+    await this.expertProfileRepository.save(profile);
+    return { imageUrls: profile.certificateUrls };
+  }
+
   private async calcTopPercentile(profileId: number, totalReviewCount: number): Promise<number | null> {
     const total = await this.expertProfileRepository.count();
     if (total < 2) return null;
@@ -74,6 +111,9 @@ export class ExpertProfilesService {
       keywordTags: profile.keywordTags,
       careerText: profile.careerText,
       educationPdfUrl: profile.educationPdfUrl,
+      imageUrls: profile.imageUrls ?? [],
+      certificateUrls: profile.certificateUrls ?? [],
+      centerInfoUrl: profile.centerInfoUrl,
       topPercentile,
       createdAt: profile.createdAt,
       updatedAt: profile.updatedAt,

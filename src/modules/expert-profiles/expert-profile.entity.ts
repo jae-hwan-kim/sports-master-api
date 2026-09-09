@@ -80,6 +80,15 @@ export class ExpertProfile {
   @Column({ nullable: true })
   educationPdfUrl: string | null;
 
+  @Column({ type: 'jsonb', default: [] })
+  imageUrls: string[];
+
+  @Column({ type: 'jsonb', default: [] })
+  certificateUrls: string[];
+
+  @Column({ nullable: true })
+  centerInfoUrl: string | null;
+
   @Column({ default: false })
   isAdActive: boolean;
 

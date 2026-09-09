@@ -53,6 +53,23 @@ export class ExpertProfileResponseDto {
   @ApiPropertyOptional({ description: '학력 PDF URL', example: 'https://cdn.example.com/edu/1.pdf' })
   educationPdfUrl: string | null;
 
+  @ApiPropertyOptional({
+    description: '프로필 이미지 URL 목록',
+    example: ['https://cdn.example.com/images/1.jpg'],
+    type: [String],
+  })
+  imageUrls: string[];
+
+  @ApiPropertyOptional({
+    description: '자격증 이미지 URL 목록',
+    example: ['https://cdn.example.com/certs/1.jpg'],
+    type: [String],
+  })
+  certificateUrls: string[];
+
+  @ApiPropertyOptional({ description: '센터 정보 URL', example: 'https://cdn.example.com/center/1.jpg' })
+  centerInfoUrl: string | null;
+
   @ApiPropertyOptional({ description: '리뷰 수 기준 상위 백분위 (전체 명인 중 상위 N%)', example: 15 })
   topPercentile: number | null;
 
