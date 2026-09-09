@@ -55,6 +55,9 @@ export class DiagnosisRequest {
   @Column({ type: 'enum', enum: DiagnosisStatus, default: DiagnosisStatus.PENDING })
   status: DiagnosisStatus;
 
+  @Column({ type: 'boolean', default: false })
+  isViewed: boolean;
+
   @CreateDateColumn()
   createdAt: Date;
 

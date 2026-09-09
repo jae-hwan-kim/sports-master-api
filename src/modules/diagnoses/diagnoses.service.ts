@@ -1,6 +1,6 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 import { CustomerProfile } from '../customer-profiles/customer-profile.entity';
 import { ExpertProfile } from '../expert-profiles/expert-profile.entity';
 import { DiagnosisRequest, DiagnosisStatus } from './diagnosis-request.entity';
@@ -24,7 +24,7 @@ export class DiagnosesService {
     }
 
     const requests = await this.diagnosisRequestRepository.find({
-      where: { expertProfileId: expertProfile.id },
+      where: { expertProfileId: expertProfile.id, status: Not(DiagnosisStatus.DELETED) },
       relations: { customer: true },
       order: { createdAt: 'ASC' },
     });
@@ -45,6 +45,7 @@ export class DiagnosesService {
       return {
         id: r.id,
         status: r.status,
+        isViewed: r.isViewed,
         customerProfile: {
           personalCode: r.customerPersonalCode,
           nickname: r.customer?.nickname ?? null,
@@ -60,6 +61,19 @@ export class DiagnosesService {
         createdAt: r.createdAt,
       };
     });
+  }
+
+  async markAsViewed(userId: number, requestId: number): Promise<void> {
+    const expertProfile = await this.expertProfileRepository.findOne({ where: { userId } });
+    if (!expertProfile) throw new NotFoundException('명인 프로필이 존재하지 않습니다.');
+
+    const request = await this.diagnosisRequestRepository.findOne({ where: { id: requestId } });
+    if (!request) throw new NotFoundException('진단요청을 찾을 수 없습니다.');
+    if (request.expertProfileId !== expertProfile.id) throw new ForbiddenException('접근 권한이 없습니다.');
+
+    if (!request.isViewed) {
+      await this.diagnosisRequestRepository.update(requestId, { isViewed: true });
+    }
   }
 
   async deleteRequest(userId: number, requestId: number): Promise<void> {

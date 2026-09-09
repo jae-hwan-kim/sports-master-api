@@ -1,4 +1,4 @@
-import { Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Req, UseGuards } from '@nestjs/common';
+import { Controller, Delete, Get, HttpCode, HttpStatus, Param, ParseIntPipe, Patch, Req, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ApiDataResponse } from '../../common/decorators/api-data-response.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -20,6 +20,13 @@ export class DiagnosesController {
   @Get('incoming')
   getIncoming(@Req() req: AuthenticatedRequest) {
     return this.diagnosesService.getIncoming(req.user.id);
+  }
+
+  @ApiOperation({ summary: '진단요청 열람 처리 (명인용) — isViewed를 true로 변경' })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Patch(':id/view')
+  markAsViewed(@Req() req: AuthenticatedRequest, @Param('id', ParseIntPipe) id: number) {
+    return this.diagnosesService.markAsViewed(req.user.id, id);
   }
 
   @ApiOperation({ summary: '진단요청 삭제 (명인용) — status를 deleted로 변경' })

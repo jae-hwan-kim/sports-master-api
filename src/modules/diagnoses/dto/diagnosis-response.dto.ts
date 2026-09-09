@@ -44,6 +44,9 @@ export class DiagnosisIncomingItemDto {
   @ApiProperty({ description: '상태', enum: ['pending', 'in_progress', 'completed', 'deleted'], example: 'pending' })
   status: string;
 
+  @ApiProperty({ description: '명인 열람 여부', example: false })
+  isViewed: boolean;
+
   @ApiProperty({ description: '고객 프로필 요약' })
   customerProfile: DiagnosisCustomerProfileDto;
 
