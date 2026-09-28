@@ -52,7 +52,10 @@ export class ReviewsService {
       qb.orderBy('r.createdAt', 'DESC');
     }
 
-    const [reviews, total] = await qb.skip((page - 1) * limit).take(limit).getManyAndCount();
+    const [reviews, total] = await qb
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
     return { data: reviews.map(r => this.toReviewDto(r)), total };
   }
 

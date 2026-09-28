@@ -1,22 +1,8 @@
-import {
-  Controller,
-  Get,
-  Param,
-  ParseBoolPipe,
-  ParseIntPipe,
-  Post,
-  Query,
-  Req,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Param, ParseBoolPipe, ParseIntPipe, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { ApiDataResponse } from '../../common/decorators/api-data-response.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import {
-  DeleteRequestResponseDto,
-  PaginatedReviewsDto,
-  ReviewSummaryDto,
-} from './dto/review-response.dto';
+import { DeleteRequestResponseDto, PaginatedReviewsDto, ReviewSummaryDto } from './dto/review-response.dto';
 import { ReviewsService } from './review.service';
 
 interface AuthenticatedRequest {
@@ -56,10 +42,7 @@ export class ReviewsController {
   @ApiOperation({ summary: '리뷰 삭제 요청 (본인 리뷰만)' })
   @ApiDataResponse(DeleteRequestResponseDto)
   @Post(':id/delete-request')
-  createDeleteRequest(
-    @Req() req: AuthenticatedRequest,
-    @Param('id', ParseIntPipe) id: number,
-  ) {
+  createDeleteRequest(@Req() req: AuthenticatedRequest, @Param('id', ParseIntPipe) id: number) {
     return this.reviewsService.createDeleteRequest(id, req.user.id);
   }
 }
