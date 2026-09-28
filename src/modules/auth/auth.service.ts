@@ -134,11 +134,15 @@ export class AuthService {
       throw new UnauthorizedException('유효하지 않은 애플 identityToken입니다.');
     }
 
+    const appleClientId = this.config.get<string>('APPLE_CLIENT_ID');
+    if (!appleClientId) {
+      throw new UnauthorizedException('Apple 로그인이 설정되지 않았습니다.');
+    }
     const signingKey = await this.appleJwksClient.getSigningKey(decoded.header.kid);
     const payload = jwt.verify(dto.identityToken, signingKey.getPublicKey(), {
       algorithms: ['RS256'],
       issuer: APPLE_ISSUER,
-      audience: this.config.get<string>('APPLE_CLIENT_ID'),
+      audience: appleClientId,
     }) as jwt.JwtPayload;
 
     return this.findOrCreateSocialUser({
