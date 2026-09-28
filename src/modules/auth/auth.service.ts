@@ -149,11 +149,12 @@ export class AuthService {
   }
 
   async googleLogin(dto: GoogleLoginDto): Promise<OAuthTokenResponseDto> {
-    // iOS/Android는 플랫폼별로 별도 OAuth 클라이언트 ID를 쓰므로(각각 다른 aud 클레임으로
-    // idToken이 발급됨) 둘 다 유효한 audience로 허용해야 한다.
+    // idToken의 aud는 발급 경로별로 다르다 — iOS는 iOS 유형 클라이언트 ID, Android는
+    // 네이티브 SDK가 쓰는 Web 유형 클라이언트 ID. 둘 다 유효한 audience로 허용해야 한다.
+    // (Android 유형 클라이언트 ID는 aud로 등장하지 않으므로 여기 넣지 않는다.)
     const validAudiences = [
       this.config.get<string>('GOOGLE_CLIENT_ID'),
-      this.config.get<string>('GOOGLE_ANDROID_CLIENT_ID'),
+      this.config.get<string>('GOOGLE_WEB_CLIENT_ID'),
     ].filter((id): id is string => Boolean(id));
     const client = new OAuth2Client();
     const ticket = await client.verifyIdToken({ idToken: dto.idToken, audience: validAudiences }).catch(() => {
