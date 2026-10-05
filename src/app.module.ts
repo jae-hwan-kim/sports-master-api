@@ -21,19 +21,34 @@ import { UsersModule } from './modules/users/users.module';
     WinstonModule.forRoot(loggerConfig),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        type: 'postgres',
-        host: config.get('DB_HOST'),
-        port: config.get<number>('DB_PORT'),
-        database: config.get('DB_NAME'),
-        username: config.get('DB_USER'),
-        password: config.get('DB_PASSWORD'),
-        entities: [__dirname + '/**/*.entity{.ts,.js}'],
-        synchronize: config.get('NODE_ENV') !== 'production',
-        migrations: [__dirname + '/migrations/**/*.{ts,js}'],
-        migrationsRun: config.get('NODE_ENV') === 'production',
-        ssl: config.get('DB_SSL') === 'true' ? { rejectUnauthorized: false } : false,
-      }),
+      useFactory: (config: ConfigService) => {
+        const databaseUrl = config.get<string>('DATABASE_URL');
+        const isProduction = config.get('NODE_ENV') === 'production';
+        if (databaseUrl) {
+          return {
+            type: 'postgres' as const,
+            url: databaseUrl,
+            ssl: { rejectUnauthorized: false },
+            entities: [__dirname + '/**/*.entity{.ts,.js}'],
+            synchronize: !isProduction,
+            migrations: [__dirname + '/migrations/**/*.{ts,js}'],
+            migrationsRun: isProduction,
+          };
+        }
+        return {
+          type: 'postgres' as const,
+          host: config.get('DB_HOST'),
+          port: config.get<number>('DB_PORT'),
+          database: config.get<string>('DB_NAME'),
+          username: config.get<string>('DB_USER'),
+          password: config.get<string>('DB_PASSWORD'),
+          entities: [__dirname + '/**/*.entity{.ts,.js}'],
+          synchronize: !isProduction,
+          migrations: [__dirname + '/migrations/**/*.{ts,js}'],
+          migrationsRun: isProduction,
+          ssl: config.get('DB_SSL') === 'true' ? { rejectUnauthorized: false } : false,
+        };
+      },
     }),
     AuthModule,
     CertificationsModule,
