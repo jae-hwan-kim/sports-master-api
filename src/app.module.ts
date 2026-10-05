@@ -32,6 +32,7 @@ import { UsersModule } from './modules/users/users.module';
         synchronize: config.get('NODE_ENV') !== 'production',
         migrations: [__dirname + '/migrations/**/*.{ts,js}'],
         migrationsRun: config.get('NODE_ENV') === 'production',
+        ssl: config.get('DB_SSL') === 'true' ? { rejectUnauthorized: false } : false,
       }),
     }),
     AuthModule,
