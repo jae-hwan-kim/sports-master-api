@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateExpertProfileDto {
   @ApiProperty({ description: '활동 지역', example: '서울 강남구' })
@@ -21,4 +21,10 @@ export class CreateExpertProfileDto {
   @IsString()
   @IsOptional()
   bio?: string;
+
+  @ApiPropertyOptional({ description: '연관 키워드 목록 (최대 3개)', example: ['재활운동', '체형교정', '컨디셔닝'] })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  keywordTags?: string[];
 }

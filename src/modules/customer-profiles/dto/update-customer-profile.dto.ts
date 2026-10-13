@@ -1,12 +1,23 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsArray, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { IsArray, IsEnum, IsNumber, IsOptional, IsString, Min } from 'class-validator';
 import { Type } from 'class-transformer';
+import { AgeGroup, Gender } from './create-customer-profile.dto';
 
 export class UpdateCustomerProfileDto {
   @ApiPropertyOptional({ description: '활동명 (닉네임)', example: '운동왕' })
   @IsString()
   @IsOptional()
   nickname?: string;
+
+  @ApiPropertyOptional({ description: '성별', enum: Gender, example: Gender.MALE })
+  @IsEnum(Gender)
+  @IsOptional()
+  gender?: Gender;
+
+  @ApiPropertyOptional({ description: '연령대', enum: AgeGroup, example: AgeGroup.THIRTIES })
+  @IsEnum(AgeGroup)
+  @IsOptional()
+  ageGroup?: AgeGroup;
 
   @ApiPropertyOptional({ description: '나이', example: 29 })
   @IsNumber()

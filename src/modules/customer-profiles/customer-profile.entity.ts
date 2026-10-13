@@ -17,6 +17,15 @@ export enum Gender {
   OTHER = 'other',
 }
 
+export enum AgeGroup {
+  TEENS = '10s',
+  TWENTIES = '20s',
+  THIRTIES = '30s',
+  FORTIES = '40s',
+  FIFTIES = '50s',
+  SIXTIES_PLUS = '60s_plus',
+}
+
 @Entity('customer_profiles')
 export class CustomerProfile {
   @PrimaryGeneratedColumn()
@@ -33,6 +42,9 @@ export class CustomerProfile {
 
   @Column({ type: 'enum', enum: Gender, nullable: true })
   gender: Gender | null;
+
+  @Column({ type: 'enum', enum: AgeGroup, nullable: true })
+  ageGroup: AgeGroup | null;
 
   @Column({ nullable: true })
   mainSport: string | null;

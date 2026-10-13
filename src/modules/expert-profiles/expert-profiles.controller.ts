@@ -45,6 +45,13 @@ export class ExpertProfilesController {
     return this.expertProfilesService.getMe(req.user.id);
   }
 
+  @ApiOperation({ summary: '명인 프로필 상세 조회 (고객용)' })
+  @ApiDataResponse(ExpertProfileResponseDto)
+  @Get(':id')
+  getById(@Param('id', ParseIntPipe) id: number) {
+    return this.expertProfilesService.getById(id);
+  }
+
   @ApiOperation({ summary: '내 명인 프로필 수정' })
   @ApiDataResponse(ExpertProfileResponseDto)
   @Patch('me')

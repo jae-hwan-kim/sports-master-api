@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Delete,
   Get,
@@ -7,13 +8,15 @@ import {
   Param,
   ParseIntPipe,
   Patch,
+  Post,
   Req,
   UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ApiDataResponse } from '../../common/decorators/api-data-response.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { DiagnosisIncomingItemDto } from './dto/diagnosis-response.dto';
+import { CreateDiagnosisRequestDto } from './dto/create-diagnosis-request.dto';
+import { DiagnosisIncomingItemDto, DiagnosisRequestResponseDto } from './dto/diagnosis-response.dto';
 import { DiagnosesService } from './diagnoses.service';
 
 interface AuthenticatedRequest {
@@ -25,6 +28,13 @@ interface AuthenticatedRequest {
 @UseGuards(JwtAuthGuard)
 export class DiagnosesController {
   constructor(private readonly diagnosesService: DiagnosesService) {}
+
+  @ApiOperation({ summary: '진단요청 생성 (고객용)' })
+  @ApiDataResponse(DiagnosisRequestResponseDto)
+  @Post()
+  createRequest(@Req() req: AuthenticatedRequest, @Body() dto: CreateDiagnosisRequestDto) {
+    return this.diagnosesService.createRequest(req.user.id, dto);
+  }
 
   @ApiOperation({ summary: '진단요청 목록 조회 (명인용) — 신청순 전체' })
   @ApiDataResponse(DiagnosisIncomingItemDto, { isArray: true })

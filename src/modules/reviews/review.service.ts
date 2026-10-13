@@ -94,6 +94,25 @@ export class ReviewsService {
     return { averageRating, ratingDistribution: distribution, totalCount, photoReviewCount };
   }
 
+  async getMyWrittenReviews(customerId: number, query: ReviewListQuery): Promise<PaginatedReviewsDto> {
+    const { sort = 'latest', photoOnly = false, page = 1, limit = 20 } = query;
+
+    const qb = this.reviewRepository
+      .createQueryBuilder('r')
+      .leftJoinAndSelect('r.customer', 'customer')
+      .leftJoinAndSelect('r.deleteRequests', 'dr')
+      .where('r.customerId = :customerId', { customerId });
+
+    if (photoOnly) qb.andWhere('array_length(r.imageUrls, 1) > 0');
+    if (sort === 'best') qb.orderBy('r.rating', 'DESC');
+    else qb.orderBy('r.createdAt', 'DESC');
+
+    const total = await qb.getCount();
+    const reviews = await qb.skip((page - 1) * limit).take(limit).getMany();
+
+    return { data: reviews.map((r) => this.toReviewDto(r)), total };
+  }
+
   async createDeleteRequest(reviewId: number, requestedById: number): Promise<DeleteRequestResponseDto> {
     const review = await this.reviewRepository.findOne({
       where: { id: reviewId },

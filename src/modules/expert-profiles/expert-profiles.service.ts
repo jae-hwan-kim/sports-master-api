@@ -24,6 +24,7 @@ export class ExpertProfilesService {
       centerName: dto.centerName,
       representativeService: dto.representativeService,
       introduction: dto.bio ?? null,
+      keywordTags: dto.keywordTags ?? null,
     });
     const saved = await this.expertProfileRepository.save(profile);
     return this.toDto(saved);
@@ -31,6 +32,12 @@ export class ExpertProfilesService {
 
   async getMe(userId: number): Promise<ExpertProfileResponseDto> {
     const profile = await this.expertProfileRepository.findOne({ where: { userId } });
+    if (!profile) throw new NotFoundException('명인 프로필이 없습니다.');
+    return this.toDto(profile);
+  }
+
+  async getById(id: number): Promise<ExpertProfileResponseDto> {
+    const profile = await this.expertProfileRepository.findOne({ where: { id } });
     if (!profile) throw new NotFoundException('명인 프로필이 없습니다.');
     return this.toDto(profile);
   }

@@ -39,6 +39,23 @@ export class ReviewsController {
     return this.reviewsService.getMySummary(req.user.id);
   }
 
+  @ApiOperation({ summary: '내가 쓴 리뷰 목록 (고객 전용)' })
+  @ApiQuery({ name: 'sort', enum: ['latest', 'best'], required: false })
+  @ApiQuery({ name: 'photoOnly', type: Boolean, required: false })
+  @ApiQuery({ name: 'page', type: Number, required: false })
+  @ApiQuery({ name: 'limit', type: Number, required: false })
+  @ApiDataResponse(PaginatedReviewsDto)
+  @Get('written-by-me')
+  getMyWrittenReviews(
+    @Req() req: AuthenticatedRequest,
+    @Query('sort') sort?: 'latest' | 'best',
+    @Query('photoOnly', new ParseBoolPipe({ optional: true })) photoOnly?: boolean,
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+  ) {
+    return this.reviewsService.getMyWrittenReviews(req.user.id, { sort, photoOnly, page, limit });
+  }
+
   @ApiOperation({ summary: '리뷰 삭제 요청 (본인 리뷰만)' })
   @ApiDataResponse(DeleteRequestResponseDto)
   @Post(':id/delete-request')

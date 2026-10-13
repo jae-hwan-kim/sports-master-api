@@ -8,6 +8,15 @@ export enum Gender {
   OTHER = 'other',
 }
 
+export enum AgeGroup {
+  TEENS = '10s',
+  TWENTIES = '20s',
+  THIRTIES = '30s',
+  FORTIES = '40s',
+  FIFTIES = '50s',
+  SIXTIES_PLUS = '60s_plus',
+}
+
 export class CreateCustomerProfileDto {
   @ApiProperty({ description: '활동명 (닉네임)', example: '스포츠러버' })
   @IsString()
@@ -25,6 +34,11 @@ export class CreateCustomerProfileDto {
   @IsEnum(Gender)
   @IsOptional()
   gender?: Gender;
+
+  @ApiPropertyOptional({ description: '연령대', enum: AgeGroup, example: AgeGroup.THIRTIES })
+  @IsEnum(AgeGroup)
+  @IsOptional()
+  ageGroup?: AgeGroup;
 
   @ApiProperty({ description: '지역', example: '서울 강남구' })
   @IsString()

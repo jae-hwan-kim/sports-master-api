@@ -16,6 +16,9 @@ export class CustomerProfileResponseDto {
   @ApiPropertyOptional({ description: '성별', enum: ['male', 'female', 'other'], example: 'male' })
   gender: string | null;
 
+  @ApiPropertyOptional({ description: '연령대', enum: ['10s', '20s', '30s', '40s', '50s', '60s_plus'], example: '30s' })
+  ageGroup: string | null;
+
   @ApiProperty({ description: '지역', example: '서울 강남구' })
   region: string;
 

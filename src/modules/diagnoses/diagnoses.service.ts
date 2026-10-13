@@ -1,10 +1,12 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Not, Repository } from 'typeorm';
 import { CustomerProfile } from '../customer-profiles/customer-profile.entity';
 import { ExpertProfile } from '../expert-profiles/expert-profile.entity';
-import { DiagnosisRequest, DiagnosisStatus } from './diagnosis-request.entity';
-import { DiagnosisIncomingItemDto } from './dto/diagnosis-response.dto';
+import { User } from '../users/user.entity';
+import { CreateDiagnosisRequestDto } from './dto/create-diagnosis-request.dto';
+import { DiagnosisRequestResponseDto, DiagnosisIncomingItemDto } from './dto/diagnosis-response.dto';
+import { DiagnosisGender, DiagnosisRequest, DiagnosisStatus } from './diagnosis-request.entity';
 
 @Injectable()
 export class DiagnosesService {
@@ -15,7 +17,43 @@ export class DiagnosesService {
     private readonly expertProfileRepository: Repository<ExpertProfile>,
     @InjectRepository(CustomerProfile)
     private readonly customerProfileRepository: Repository<CustomerProfile>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
   ) {}
+
+  async createRequest(userId: number, dto: CreateDiagnosisRequestDto): Promise<DiagnosisRequestResponseDto> {
+    const expert = await this.expertProfileRepository.findOne({ where: { id: dto.expertProfileId } });
+    if (!expert) throw new NotFoundException('명인 프로필이 없습니다.');
+
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('사용자를 찾을 수 없습니다.');
+
+    const pendingExists = await this.diagnosisRequestRepository.findOne({
+      where: { customerId: userId, expertProfileId: dto.expertProfileId, status: DiagnosisStatus.PENDING },
+    });
+    if (pendingExists) throw new ConflictException('이미 접수된 진단 요청이 있습니다.');
+
+    const cp = await this.customerProfileRepository.findOne({ where: { userId } });
+
+    const request = new DiagnosisRequest();
+    request.customerId = userId;
+    request.expertProfileId = dto.expertProfileId;
+    request.customerPersonalCode = user.personalCode;
+    request.customerName = user.nickname ?? user.personalCode;
+    request.customerAge = cp?.age ?? null;
+    request.customerGender = (cp?.gender ?? null) as unknown as DiagnosisGender | null;
+    request.customerRegion = cp?.region ?? null;
+    request.mainSport = cp?.mainSport ?? null;
+    const saved = await this.diagnosisRequestRepository.save(request);
+
+    return {
+      id: saved.id,
+      expertId: dto.expertProfileId,
+      customerId: userId,
+      status: saved.status,
+      createdAt: saved.createdAt,
+    };
+  }
 
   async getIncoming(userId: number): Promise<DiagnosisIncomingItemDto[]> {
     const expertProfile = await this.expertProfileRepository.findOne({ where: { userId } });

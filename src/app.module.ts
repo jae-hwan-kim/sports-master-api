@@ -7,10 +7,13 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { loggerConfig } from './config/logger.config';
+import { AiRecommendationsModule } from './modules/ai-recommendations/ai-recommendations.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { CertificationsModule } from './modules/certifications/certifications.module';
+import { CustomerProfilesModule } from './modules/customer-profiles/customer-profiles.module';
 import { DiagnosesModule } from './modules/diagnoses/diagnoses.module';
 import { ExpertProfilesModule } from './modules/expert-profiles/expert-profiles.module';
+import { FavoriteExpertsModule } from './modules/favorite-experts/favorite-experts.module';
 import { HomeModule } from './modules/home/home.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { UsersModule } from './modules/users/users.module';
@@ -50,10 +53,13 @@ import { UsersModule } from './modules/users/users.module';
         };
       },
     }),
+    AiRecommendationsModule,
     AuthModule,
     CertificationsModule,
+    CustomerProfilesModule,
     DiagnosesModule,
     ExpertProfilesModule,
+    FavoriteExpertsModule,
     HomeModule,
     ReviewsModule,
     UsersModule,
