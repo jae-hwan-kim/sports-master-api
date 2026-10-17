@@ -42,19 +42,23 @@ export class AuthService {
 
   async checkEmail(email: string): Promise<{ available: boolean }> {
     if (!email) return { available: false };
-    const user = await this.userRepository.findOne({ where: { email } });
-    return { available: !user };
+    // withDeleted: true로 soft-deleted 포함 조회 — 탈퇴 계정은 "사용 가능"으로 처리
+    const user = await this.userRepository.findOne({ where: { email }, withDeleted: true });
+    return { available: !user || !!user.deletedAt };
   }
 
   async register(dto: RegisterDto): Promise<AuthTokenResponseDto> {
-    const existing = await this.userRepository.findOne({ where: { email: dto.email } });
+    const existing = await this.userRepository.findOne({ where: { email: dto.email }, withDeleted: true });
     if (existing) {
-      throw new ConflictException('이미 가입된 이메일입니다.');
+      if (!existing.deletedAt) throw new ConflictException('이미 가입된 이메일입니다.');
+      // 탈퇴 계정: unique 슬롯 해제 후 신규 가입 허용
+      await this.userRepository.update(existing.id, { email: null, nickname: null });
     }
 
-    const existingNickname = await this.userRepository.findOne({ where: { nickname: dto.nickname } });
+    const existingNickname = await this.userRepository.findOne({ where: { nickname: dto.nickname }, withDeleted: true });
     if (existingNickname) {
-      throw new ConflictException('이미 사용중인 닉네임입니다.');
+      if (!existingNickname.deletedAt) throw new ConflictException('이미 사용중인 닉네임입니다.');
+      await this.userRepository.update(existingNickname.id, { nickname: null });
     }
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
