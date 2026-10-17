@@ -228,7 +228,13 @@ export class AuthService {
 
     if (user?.deletedAt) {
       await this.userRepository.restore(user.id);
+      // 탈퇴 후 재가입으로 간주 — 모드 선택부터 다시 진행
+      await this.userRepository.update(user.id, {
+        hasSelectedMode: false,
+        currentMode: UserMode.CUSTOMER,
+      });
       user = (await this.userRepository.findOne({ where: { id: user.id } }))!;
+      isNewUser = true;
     } else if (!user && params.email) {
       const existingByEmail = await this.userRepository.findOne({ where: { email: params.email } });
       if (existingByEmail) {
