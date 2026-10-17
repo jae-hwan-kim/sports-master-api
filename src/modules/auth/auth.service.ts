@@ -218,12 +218,18 @@ export class AuthService {
     socialId: string;
     email: string | null;
   }): Promise<OAuthTokenResponseDto> {
+    // withDeleted: true — 탈퇴(soft-delete)된 계정도 포함해 조회
+    // soft-delete된 계정이면 재가입으로 간주하고 restore 처리
     let user = await this.userRepository.findOne({
       where: { authProvider: params.provider, socialId: params.socialId },
+      withDeleted: true,
     });
     let isNewUser = false;
 
-    if (!user && params.email) {
+    if (user?.deletedAt) {
+      await this.userRepository.restore(user.id);
+      user = (await this.userRepository.findOne({ where: { id: user.id } }))!;
+    } else if (!user && params.email) {
       const existingByEmail = await this.userRepository.findOne({ where: { email: params.email } });
       if (existingByEmail) {
         throw new ConflictException('이미 다른 방식으로 가입된 이메일입니다. 기존 로그인 방식을 이용해주세요.');
