@@ -1,5 +1,10 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
+export class ReviewCreatedDto {
+  @ApiProperty({ description: '생성된 리뷰 ID', example: 1 })
+  id: number;
+}
+
 export class ReviewResponseDto {
   @ApiProperty({ description: '리뷰 ID', example: 1 })
   id: number;

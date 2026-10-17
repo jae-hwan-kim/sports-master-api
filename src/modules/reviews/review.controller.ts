@@ -1,8 +1,10 @@
-import { Controller, Get, Param, ParseBoolPipe, ParseIntPipe, Post, Query, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseBoolPipe, ParseIntPipe, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { ApiDataResponse } from '../../common/decorators/api-data-response.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { DeleteRequestResponseDto, PaginatedReviewsDto, ReviewSummaryDto } from './dto/review-response.dto';
+import { CreateDiagnosisReviewDto } from './dto/create-diagnosis-review.dto';
+import { DeleteRequestResponseDto, PaginatedReviewsDto, ReviewCreatedDto, ReviewResponseDto, ReviewSummaryDto } from './dto/review-response.dto';
+import { UpdateReviewDto } from './dto/update-review.dto';
 import { ReviewsService } from './review.service';
 
 interface AuthenticatedRequest {
@@ -14,6 +16,13 @@ interface AuthenticatedRequest {
 @UseGuards(JwtAuthGuard)
 export class ReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}
+
+  @ApiOperation({ summary: '리뷰 생성 (고객용) — 진단요청한 명인에 대해 작성' })
+  @ApiDataResponse(ReviewCreatedDto)
+  @Post()
+  createReview(@Req() req: AuthenticatedRequest, @Body() dto: CreateDiagnosisReviewDto) {
+    return this.reviewsService.createReview(req.user.id, dto);
+  }
 
   @ApiOperation({ summary: '내 리뷰 목록 조회 (명인 전용)' })
   @ApiQuery({ name: 'sort', enum: ['latest', 'best'], required: false })
@@ -54,6 +63,17 @@ export class ReviewsController {
     @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
   ) {
     return this.reviewsService.getMyWrittenReviews(req.user.id, { sort, photoOnly, page, limit });
+  }
+
+  @ApiOperation({ summary: '리뷰 수정 (본인 리뷰만)' })
+  @ApiDataResponse(ReviewResponseDto)
+  @Patch(':id')
+  updateReview(
+    @Req() req: AuthenticatedRequest,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateReviewDto,
+  ) {
+    return this.reviewsService.updateReview(id, req.user.id, dto);
   }
 
   @ApiOperation({ summary: '리뷰 삭제 요청 (본인 리뷰만)' })

@@ -1,6 +1,7 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
+import { DiagnosisRequest, DiagnosisStatus } from '../diagnoses/diagnosis-request.entity';
 import { ExpertProfile } from '../expert-profiles/expert-profile.entity';
 import { Review } from './review.entity';
 import { ReviewDeleteRequest, DeleteRequestStatus } from './review-delete-request.entity';
@@ -10,6 +11,8 @@ import {
   ReviewResponseDto,
   ReviewSummaryDto,
 } from './dto/review-response.dto';
+import { CreateDiagnosisReviewDto } from './dto/create-diagnosis-review.dto';
+import { UpdateReviewDto } from './dto/update-review.dto';
 
 export type ReviewSortType = 'latest' | 'best';
 
@@ -28,7 +31,34 @@ export class ReviewsService {
     private readonly deleteRequestRepository: Repository<ReviewDeleteRequest>,
     @InjectRepository(ExpertProfile)
     private readonly expertProfileRepository: Repository<ExpertProfile>,
+    @InjectRepository(DiagnosisRequest)
+    private readonly diagnosisRequestRepository: Repository<DiagnosisRequest>,
   ) {}
+
+  async createReview(userId: number, dto: CreateDiagnosisReviewDto): Promise<{ id: number }> {
+    const diagnosisExists = await this.diagnosisRequestRepository.findOne({
+      where: { customerId: userId, expertProfileId: dto.expertProfileId, status: Not(DiagnosisStatus.DELETED) },
+    });
+    if (!diagnosisExists) {
+      throw new NotFoundException('해당 명인에게 진단 요청한 내역이 없습니다.');
+    }
+
+    const existing = await this.reviewRepository.findOne({
+      where: { customerId: userId, expertProfileId: dto.expertProfileId },
+    });
+    if (existing) throw new ConflictException('이미 해당 명인에게 리뷰를 작성하셨습니다.');
+
+    const review = this.reviewRepository.create({
+      customerId: userId,
+      expertProfileId: dto.expertProfileId,
+      rating: dto.rating,
+      comment: dto.comment ?? null,
+      chatRoomId: null,
+      imageUrls: [],
+    });
+    const saved = await this.reviewRepository.save(review);
+    return { id: saved.id };
+  }
 
   async getMyReviews(userId: number, query: ReviewListQuery): Promise<PaginatedReviewsDto> {
     const expertProfile = await this.expertProfileRepository.findOne({ where: { userId } });
@@ -103,7 +133,7 @@ export class ReviewsService {
       .leftJoinAndSelect('r.deleteRequests', 'dr')
       .where('r.customerId = :customerId', { customerId });
 
-    if (photoOnly) qb.andWhere('array_length(r.imageUrls, 1) > 0');
+    if (photoOnly) qb.andWhere('jsonb_array_length(r."imageUrls") > 0');
     if (sort === 'best') qb.orderBy('r.rating', 'DESC');
     else qb.orderBy('r.createdAt', 'DESC');
 
@@ -111,6 +141,21 @@ export class ReviewsService {
     const reviews = await qb.skip((page - 1) * limit).take(limit).getMany();
 
     return { data: reviews.map((r) => this.toReviewDto(r)), total };
+  }
+
+  async updateReview(id: number, userId: number, dto: UpdateReviewDto): Promise<ReviewResponseDto> {
+    const review = await this.reviewRepository.findOne({
+      where: { id },
+      relations: { deleteRequests: true },
+    });
+    if (!review) throw new NotFoundException('리뷰를 찾을 수 없습니다.');
+    if (review.customerId !== userId) throw new ForbiddenException('본인의 리뷰만 수정할 수 있습니다.');
+
+    if (dto.rating !== undefined) review.rating = dto.rating;
+    if (dto.comment !== undefined) review.comment = dto.comment;
+
+    const saved = await this.reviewRepository.save(review);
+    return this.toReviewDto(saved);
   }
 
   async createDeleteRequest(reviewId: number, requestedById: number): Promise<DeleteRequestResponseDto> {

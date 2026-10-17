@@ -1,5 +1,28 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
+export class DiagnosisSentItemDto {
+  @ApiProperty({ description: '명인 프로필 ID', example: 5 })
+  expertProfileId: number;
+
+  @ApiProperty({ description: '명인 이름 (센터명 또는 닉네임)', example: '운동의신 센터' })
+  expertName: string;
+
+  @ApiPropertyOptional({ description: '명인 프로필 이미지 URL', example: 'https://...', nullable: true })
+  expertAvatarUrl: string | null;
+
+  @ApiPropertyOptional({ description: '명인 등급', enum: ['bronze', 'silver', 'gold', 'platinum', 'diamond'], nullable: true })
+  expertGrade: string | null;
+
+  @ApiProperty({ description: '평균 별점', example: 4.5 })
+  avgRating: number;
+
+  @ApiProperty({ description: '리뷰 수', example: 12 })
+  reviewCount: number;
+
+  @ApiProperty({ description: '이 고객이 해당 명인에게 리뷰를 작성했는지', example: false })
+  hasWrittenReview: boolean;
+}
+
 export class DiagnosisCustomerProfileDto {
   @ApiProperty({ description: '개인 코드', example: 'USR-000003' })
   personalCode: string;

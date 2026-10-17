@@ -16,7 +16,7 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ApiDataResponse } from '../../common/decorators/api-data-response.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CreateDiagnosisRequestDto } from './dto/create-diagnosis-request.dto';
-import { DiagnosisIncomingItemDto, DiagnosisRequestResponseDto } from './dto/diagnosis-response.dto';
+import { DiagnosisSentItemDto, DiagnosisIncomingItemDto, DiagnosisRequestResponseDto } from './dto/diagnosis-response.dto';
 import { DiagnosesService } from './diagnoses.service';
 
 interface AuthenticatedRequest {
@@ -28,6 +28,13 @@ interface AuthenticatedRequest {
 @UseGuards(JwtAuthGuard)
 export class DiagnosesController {
   constructor(private readonly diagnosesService: DiagnosesService) {}
+
+  @ApiOperation({ summary: '내가 진단요청한 명인 목록 조회 (고객용) — 리뷰 작성 여부 포함' })
+  @ApiDataResponse(DiagnosisSentItemDto, { isArray: true })
+  @Get('my-sent')
+  getMySent(@Req() req: AuthenticatedRequest) {
+    return this.diagnosesService.getMySent(req.user.id);
+  }
 
   @ApiOperation({ summary: '진단요청 생성 (고객용)' })
   @ApiDataResponse(DiagnosisRequestResponseDto)

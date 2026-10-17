@@ -3,13 +3,14 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from '../auth/auth.module';
 import { CustomerProfile } from '../customer-profiles/customer-profile.entity';
 import { ExpertProfile } from '../expert-profiles/expert-profile.entity';
+import { Review } from '../reviews/review.entity';
 import { User } from '../users/user.entity';
 import { DiagnosisRequest } from './diagnosis-request.entity';
 import { DiagnosesController } from './diagnoses.controller';
 import { DiagnosesService } from './diagnoses.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([DiagnosisRequest, ExpertProfile, CustomerProfile, User]), AuthModule],
+  imports: [TypeOrmModule.forFeature([DiagnosisRequest, ExpertProfile, CustomerProfile, User, Review]), AuthModule],
   controllers: [DiagnosesController],
   providers: [DiagnosesService],
 })

@@ -3,9 +3,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Not, Repository } from 'typeorm';
 import { CustomerProfile } from '../customer-profiles/customer-profile.entity';
 import { ExpertProfile } from '../expert-profiles/expert-profile.entity';
+import { Review } from '../reviews/review.entity';
 import { User } from '../users/user.entity';
 import { CreateDiagnosisRequestDto } from './dto/create-diagnosis-request.dto';
-import { DiagnosisRequestResponseDto, DiagnosisIncomingItemDto } from './dto/diagnosis-response.dto';
+import { DiagnosisSentItemDto, DiagnosisRequestResponseDto, DiagnosisIncomingItemDto } from './dto/diagnosis-response.dto';
 import { DiagnosisGender, DiagnosisRequest, DiagnosisStatus } from './diagnosis-request.entity';
 
 @Injectable()
@@ -19,7 +20,48 @@ export class DiagnosesService {
     private readonly customerProfileRepository: Repository<CustomerProfile>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(Review)
+    private readonly reviewRepository: Repository<Review>,
   ) {}
+
+  async getMySent(userId: number): Promise<DiagnosisSentItemDto[]> {
+    const rows = await this.diagnosisRequestRepository
+      .createQueryBuilder('dr')
+      .select('dr.expertProfileId', 'expertProfileId')
+      .where('dr.customerId = :userId', { userId })
+      .andWhere('dr.status != :deleted', { deleted: DiagnosisStatus.DELETED })
+      .distinct(true)
+      .getRawMany<{ expertProfileId: number }>();
+
+    if (rows.length === 0) return [];
+
+    const expertProfileIds = rows.map(r => r.expertProfileId);
+
+    const experts = await this.expertProfileRepository
+      .createQueryBuilder('ep')
+      .leftJoinAndSelect('ep.user', 'user')
+      .whereInIds(expertProfileIds)
+      .getMany();
+
+    const writtenReviews = await this.reviewRepository
+      .createQueryBuilder('r')
+      .select('r.expertProfileId', 'expertProfileId')
+      .where('r.customerId = :userId', { userId })
+      .andWhere('r.expertProfileId IN (:...ids)', { ids: expertProfileIds })
+      .getRawMany<{ expertProfileId: number }>();
+
+    const writtenSet = new Set(writtenReviews.map(r => r.expertProfileId));
+
+    return experts.map(ep => ({
+      expertProfileId: ep.id,
+      expertName: ep.centerName || ep.user?.nickname || String(ep.id),
+      expertAvatarUrl: ep.user?.profileImageUrl ?? null,
+      expertGrade: ep.expertGrade ?? null,
+      avgRating: Number(ep.averageRating),
+      reviewCount: ep.totalReviewCount,
+      hasWrittenReview: writtenSet.has(ep.id),
+    }));
+  }
 
   async createRequest(userId: number, dto: CreateDiagnosisRequestDto): Promise<DiagnosisRequestResponseDto> {
     const expert = await this.expertProfileRepository.findOne({ where: { id: dto.expertProfileId } });

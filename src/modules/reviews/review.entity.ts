@@ -19,8 +19,8 @@ export class Review {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ unique: true })
-  chatRoomId: number;
+  @Column({ unique: true, nullable: true })
+  chatRoomId: number | null;
 
   @Column()
   expertProfileId: number;
@@ -48,7 +48,7 @@ export class Review {
 
   @OneToOne(() => ChatRoom, cr => cr.review)
   @JoinColumn({ name: 'chatRoomId' })
-  chatRoom: ChatRoom;
+  chatRoom: ChatRoom | null;
 
   @ManyToOne(() => ExpertProfile, ep => ep.reviews)
   @JoinColumn({ name: 'expertProfileId' })
