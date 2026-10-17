@@ -209,6 +209,8 @@ export class AuthService {
       }
     }
 
+    // unique 컬럼을 null로 해제해야 soft-delete 후 DB unique 제약 위반 없이 재가입 가능
+    await this.userRepository.update(userId, { nickname: null, email: null });
     await this.refreshTokenRepository.delete({ userId });
     await this.userRepository.softDelete(userId);
   }
