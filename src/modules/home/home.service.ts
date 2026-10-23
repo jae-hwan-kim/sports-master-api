@@ -7,8 +7,9 @@ import { requireEnv } from '../../common/config/require-env';
 import { ChatRoom } from '../chat-rooms/chat-room.entity';
 import { DiagnosisRequest, DiagnosisStatus } from '../diagnoses/diagnosis-request.entity';
 import { DiagnosisIncomingItemDto } from '../diagnoses/dto/diagnosis-response.dto';
-import { ExpertProfile } from '../expert-profiles/expert-profile.entity';
+import { CertificationStatus, ExpertProfile } from '../expert-profiles/expert-profile.entity';
 import { ExpertProfileResponseDto } from '../expert-profiles/dto/expert-profile-response.dto';
+import { FeaturedExpertDto } from '../expert-profiles/dto/featured-expert.dto';
 import { CreateReviewTokenDto } from '../reviews/dto/create-review-token.dto';
 import { ReviewTokenResponseDto } from '../reviews/dto/review-response.dto';
 import { UpdateModeDto } from '../users/dto/update-mode.dto';
@@ -16,6 +17,7 @@ import { UpdateModeResponseDto } from '../users/dto/user-response.dto';
 import { User, UserMode } from '../users/user.entity';
 
 const REVIEW_REQUEST_TOKEN_EXPIRES_IN = '7d';
+const FEATURED_EXPERTS_LIMIT = 10;
 
 @Injectable()
 export class HomeService {
@@ -57,23 +59,62 @@ export class HomeService {
 
   async createReviewRequestLink(userId: number, dto: CreateReviewTokenDto): Promise<ReviewTokenResponseDto> {
     const expertProfile = await this.getExpertProfileOrThrow(userId);
+    const signOptions = {
+      secret: requireEnv(this.config, 'JWT_ACCESS_SECRET'),
+      expiresIn: REVIEW_REQUEST_TOKEN_EXPIRES_IN as unknown as number,
+    };
+
+    // chatRoomId 없음 → 명인 단위 링크 (명인홈 '링크 보내기')
+    if (dto.chatRoomId === undefined) {
+      const reviewToken = await this.jwtService.signAsync(
+        { typ: 'review', expertProfileId: expertProfile.id },
+        signOptions,
+      );
+      return { reviewToken, deepLink: `sportsmaster://review?token=${reviewToken}` };
+    }
+
     const chatRoom = await this.chatRoomRepository.findOne({ where: { id: dto.chatRoomId } });
     if (!chatRoom || chatRoom.expertProfileId !== expertProfile.id) {
       throw new ForbiddenException('본인의 채팅방이 아닙니다.');
     }
 
-    const reviewToken = await this.jwtService.signAsync(
-      { chatRoomId: chatRoom.id },
-      {
-        secret: requireEnv(this.config, 'JWT_ACCESS_SECRET'),
-        expiresIn: REVIEW_REQUEST_TOKEN_EXPIRES_IN as unknown as number,
-      },
-    );
+    const reviewToken = await this.jwtService.signAsync({ typ: 'review', chatRoomId: chatRoom.id }, signOptions);
 
     chatRoom.reviewRequestSentAt = new Date();
     await this.chatRoomRepository.save(chatRoom);
 
     return { reviewToken, deepLink: `sportsmaster://review?token=${reviewToken}` };
+  }
+
+  // 이달의 소개 명인 — 광고 기능 전까지 광고 활성 명인 우선 + 평점/리뷰순으로 노출
+  async getFeaturedExperts(): Promise<FeaturedExpertDto[]> {
+    const experts = await this.expertProfileRepository
+      .createQueryBuilder('ep')
+      .innerJoin('ep.user', 'u')
+      .where('u.deletedAt IS NULL')
+      .andWhere('u.isActive = true')
+      .andWhere('ep.certificationStatus = :approved', { approved: CertificationStatus.APPROVED })
+      // 광고 활성 + 미만료 명인 우선
+      .orderBy(
+        'CASE WHEN "ep"."isAdActive" AND ("ep"."adExpiresAt" IS NULL OR "ep"."adExpiresAt" > NOW()) THEN 0 ELSE 1 END',
+        'ASC',
+      )
+      .addOrderBy('ep.averageRating', 'DESC')
+      .addOrderBy('ep.totalReviewCount', 'DESC')
+      .addOrderBy('ep.id', 'DESC')
+      .limit(FEATURED_EXPERTS_LIMIT)
+      .getMany();
+
+    return experts.map(ep => ({
+      id: ep.id,
+      name: ep.centerName,
+      introduction: ep.introduction,
+      region: ep.region,
+      keywordTags: ep.keywordTags,
+      // 상세 모달과 같은 이미지 출처 우선 (portfolioImageUrls → imageUrls)
+      imageUrl: ep.portfolioImageUrls?.[0] ?? ep.imageUrls?.[0] ?? null,
+      expertGrade: ep.expertGrade,
+    }));
   }
 
   async getDiagnosisPreview(userId: number): Promise<DiagnosisIncomingItemDto[]> {

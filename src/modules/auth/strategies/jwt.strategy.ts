@@ -26,6 +26,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: JwtPayload) {
+    // 리뷰 요청 토큰 등 sub 없는 토큰은 access token으로 사용 불가
+    if (!payload.sub) throw new UnauthorizedException('유효하지 않은 토큰입니다.');
     const user = await this.userRepository.findOne({ where: { id: payload.sub } });
     if (!user || !user.isActive) {
       throw new UnauthorizedException('유효하지 않은 사용자입니다.');

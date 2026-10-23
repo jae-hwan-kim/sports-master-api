@@ -4,6 +4,7 @@ import { ApiDataResponse } from '../../common/decorators/api-data-response.decor
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { DiagnosisIncomingItemDto } from '../diagnoses/dto/diagnosis-response.dto';
 import { ExpertProfileResponseDto } from '../expert-profiles/dto/expert-profile-response.dto';
+import { FeaturedExpertDto } from '../expert-profiles/dto/featured-expert.dto';
 import { CreateReviewTokenDto } from '../reviews/dto/create-review-token.dto';
 import { ReviewTokenResponseDto } from '../reviews/dto/review-response.dto';
 import { UpdateModeDto } from '../users/dto/update-mode.dto';
@@ -27,11 +28,18 @@ export class HomeController {
     return this.homeService.getExpertGrade(req.user.id);
   }
 
-  @ApiOperation({ summary: '명인 홈: 리뷰 요청 링크 생성 (카카오 딥링크)' })
+  @ApiOperation({ summary: '명인 홈: 리뷰 요청 링크 생성 (chatRoomId 생략 시 명인 단위 링크)' })
   @ApiDataResponse(ReviewTokenResponseDto)
   @Post('review-request')
   createReviewRequestLink(@Req() req: AuthenticatedRequest, @Body() dto: CreateReviewTokenDto) {
     return this.homeService.createReviewRequestLink(req.user.id, dto);
+  }
+
+  @ApiOperation({ summary: '고객 홈: 이달의 소개 명인 목록' })
+  @ApiDataResponse(FeaturedExpertDto, { isArray: true })
+  @Get('featured-experts')
+  getFeaturedExperts() {
+    return this.homeService.getFeaturedExperts();
   }
 
   @ApiOperation({ summary: '명인 홈: 요청진단 미리보기 (신청순 최대 3개)' })
