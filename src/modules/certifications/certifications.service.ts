@@ -1,7 +1,5 @@
-import { existsSync, mkdirSync } from 'fs';
-import { join } from 'path';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { StorageService } from '../../common/storage/storage.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ExpertProfile } from '../expert-profiles/expert-profile.entity';
@@ -13,13 +11,14 @@ import {
   LicenseType,
 } from './dto/create-certification.dto';
 import { UpdateCertificationStatusDto } from './dto/update-certification-status.dto';
+import { ensureExpertProfile } from '../expert-profiles/ensure-expert-profile';
 
 @Injectable()
 export class CertificationsService {
   constructor(
     @InjectRepository(Certification) private readonly certificationRepository: Repository<Certification>,
     @InjectRepository(ExpertProfile) private readonly expertProfileRepository: Repository<ExpertProfile>,
-    private readonly config: ConfigService,
+    private readonly storage: StorageService,
   ) {}
 
   async create(
@@ -30,12 +29,9 @@ export class CertificationsService {
     if (!file) {
       throw new BadRequestException('첨부 파일이 필요합니다.');
     }
-    const expertProfile = await this.expertProfileRepository.findOne({ where: { userId } });
-    if (!expertProfile) {
-      throw new NotFoundException('명인 프로필이 존재하지 않습니다.');
-    }
+    const expertProfile = await ensureExpertProfile(this.expertProfileRepository.manager, userId);
 
-    const fileUrl = this.saveFile(file);
+    const fileUrl = await this.storage.upload(file, `certifications/${userId}`);
     const certification = await this.certificationRepository.save(
       this.certificationRepository.create({
         expertProfileId: expertProfile.id,
@@ -86,16 +82,6 @@ export class CertificationsService {
       return CertificationType.HEALTH_EXERCISE_MANAGER;
     }
     return CertificationType.OTHER;
-  }
-
-  private saveFile(file: Express.Multer.File): string {
-    const uploadDir = this.config.get<string>('UPLOAD_DIR') ?? 'uploads';
-    const certDir = join(process.cwd(), uploadDir, 'certifications');
-    if (!existsSync(certDir)) {
-      mkdirSync(certDir, { recursive: true });
-    }
-    // NestJS FileInterceptor(diskStorage)가 이미 파일을 certDir에 저장하도록 설정되어 있어야 함
-    return `/${uploadDir}/certifications/${file.filename}`;
   }
 
   private toResponseDto(certification: Certification): CertificationResponseDto {

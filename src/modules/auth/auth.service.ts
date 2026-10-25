@@ -18,6 +18,7 @@ import { KakaoLoginDto } from './dto/kakao-login.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { WithdrawDto } from './dto/withdraw.dto';
+import { ensureExpertProfile } from '../expert-profiles/ensure-expert-profile';
 
 const APPLE_JWKS_URI = 'https://appleid.apple.com/auth/keys';
 const APPLE_ISSUER = 'https://appleid.apple.com';
@@ -55,7 +56,10 @@ export class AuthService {
       await this.userRepository.update(existing.id, { email: null, nickname: null });
     }
 
-    const existingNickname = await this.userRepository.findOne({ where: { nickname: dto.nickname }, withDeleted: true });
+    const existingNickname = await this.userRepository.findOne({
+      where: { nickname: dto.nickname },
+      withDeleted: true,
+    });
     if (existingNickname) {
       if (!existingNickname.deletedAt) throw new ConflictException('이미 사용중인 닉네임입니다.');
       await this.userRepository.update(existingNickname.id, { nickname: null });
@@ -75,6 +79,9 @@ export class AuthService {
         personalCode: await this.generatePersonalCode(),
       }),
     );
+    if (user.currentMode === UserMode.EXPERT) {
+      await ensureExpertProfile(this.userRepository.manager, user.id);
+    }
 
     return this.issueTokens(user);
   }

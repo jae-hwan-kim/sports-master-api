@@ -1,9 +1,27 @@
-import { Body, Controller, Get, Param, ParseBoolPipe, ParseIntPipe, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseBoolPipe,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { ApiDataResponse } from '../../common/decorators/api-data-response.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CreateDiagnosisReviewDto } from './dto/create-diagnosis-review.dto';
-import { DeleteRequestResponseDto, PaginatedReviewsDto, ReviewCreatedDto, ReviewResponseDto, ReviewSummaryDto } from './dto/review-response.dto';
+import {
+  DeleteRequestResponseDto,
+  PaginatedReviewsDto,
+  ReviewCreatedDto,
+  ReviewResponseDto,
+  ReviewSummaryDto,
+} from './dto/review-response.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
 import { ReviewsService } from './review.service';
 
@@ -48,6 +66,30 @@ export class ReviewsController {
     return this.reviewsService.getMySummary(req.user.id);
   }
 
+  @ApiOperation({ summary: '특정 명인의 리뷰 목록 (고객의 명인 상세 리뷰 보기)' })
+  @ApiQuery({ name: 'sort', enum: ['latest', 'best'], required: false })
+  @ApiQuery({ name: 'photoOnly', type: Boolean, required: false })
+  @ApiQuery({ name: 'page', type: Number, required: false })
+  @ApiQuery({ name: 'limit', type: Number, required: false })
+  @ApiDataResponse(PaginatedReviewsDto)
+  @Get('experts/:expertProfileId')
+  getExpertReviews(
+    @Param('expertProfileId', ParseIntPipe) expertProfileId: number,
+    @Query('sort') sort?: 'latest' | 'best',
+    @Query('photoOnly', new ParseBoolPipe({ optional: true })) photoOnly?: boolean,
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+    @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+  ) {
+    return this.reviewsService.getExpertReviews(expertProfileId, { sort, photoOnly, page, limit });
+  }
+
+  @ApiOperation({ summary: '특정 명인의 리뷰 요약' })
+  @ApiDataResponse(ReviewSummaryDto)
+  @Get('experts/:expertProfileId/summary')
+  getExpertSummary(@Param('expertProfileId', ParseIntPipe) expertProfileId: number) {
+    return this.reviewsService.getExpertSummary(expertProfileId);
+  }
+
   @ApiOperation({ summary: '내가 쓴 리뷰 목록 (고객 전용)' })
   @ApiQuery({ name: 'sort', enum: ['latest', 'best'], required: false })
   @ApiQuery({ name: 'photoOnly', type: Boolean, required: false })
@@ -68,11 +110,7 @@ export class ReviewsController {
   @ApiOperation({ summary: '리뷰 수정 (본인 리뷰만)' })
   @ApiDataResponse(ReviewResponseDto)
   @Patch(':id')
-  updateReview(
-    @Req() req: AuthenticatedRequest,
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateReviewDto,
-  ) {
+  updateReview(@Req() req: AuthenticatedRequest, @Param('id', ParseIntPipe) id: number, @Body() dto: UpdateReviewDto) {
     return this.reviewsService.updateReview(id, req.user.id, dto);
   }
 

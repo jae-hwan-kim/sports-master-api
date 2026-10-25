@@ -13,6 +13,7 @@ import {
 } from './dto/review-response.dto';
 import { CreateDiagnosisReviewDto } from './dto/create-diagnosis-review.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
+import { ensureExpertProfile, expertDisplayName } from '../expert-profiles/ensure-expert-profile';
 
 export type ReviewSortType = 'latest' | 'best';
 
@@ -57,20 +58,29 @@ export class ReviewsService {
       imageUrls: [],
     });
     const saved = await this.reviewRepository.save(review);
+    await this.refreshExpertStats(dto.expertProfileId);
     return { id: saved.id };
   }
 
   async getMyReviews(userId: number, query: ReviewListQuery): Promise<PaginatedReviewsDto> {
-    const expertProfile = await this.expertProfileRepository.findOne({ where: { userId } });
-    if (!expertProfile) throw new NotFoundException('명인 프로필이 없습니다.');
+    const expertProfile = await ensureExpertProfile(this.expertProfileRepository.manager, userId);
+    return this.getExpertReviews(expertProfile.id, query);
+  }
 
+  async getMySummary(userId: number): Promise<ReviewSummaryDto> {
+    const expertProfile = await ensureExpertProfile(this.expertProfileRepository.manager, userId);
+    return this.getExpertSummary(expertProfile.id);
+  }
+
+  // 특정 명인의 리뷰 목록 — 명인 본인(me)과 고객의 명인 상세 '리뷰 보기'가 공용
+  async getExpertReviews(expertProfileId: number, query: ReviewListQuery): Promise<PaginatedReviewsDto> {
     const { sort = 'latest', photoOnly = false, page = 1, limit = 20 } = query;
 
     const qb = this.reviewRepository
       .createQueryBuilder('r')
       .leftJoinAndSelect('r.customer', 'customer')
       .leftJoinAndSelect('r.deleteRequests', 'dr', "dr.status = 'pending'")
-      .where('r.expertProfileId = :expertProfileId', { expertProfileId: expertProfile.id });
+      .where('r.expertProfileId = :expertProfileId', { expertProfileId });
 
     if (photoOnly) {
       qb.andWhere('jsonb_array_length(r."imageUrls") > 0');
@@ -89,15 +99,12 @@ export class ReviewsService {
     return { data: reviews.map(r => this.toReviewDto(r)), total };
   }
 
-  async getMySummary(userId: number): Promise<ReviewSummaryDto> {
-    const expertProfile = await this.expertProfileRepository.findOne({ where: { userId } });
-    if (!expertProfile) throw new NotFoundException('명인 프로필이 없습니다.');
-
+  async getExpertSummary(expertProfileId: number): Promise<ReviewSummaryDto> {
     const rows: { rating: string; count: string }[] = await this.reviewRepository
       .createQueryBuilder('r')
       .select('r.rating', 'rating')
       .addSelect('COUNT(*)', 'count')
-      .where('r.expertProfileId = :id', { id: expertProfile.id })
+      .where('r.expertProfileId = :id', { id: expertProfileId })
       .groupBy('r.rating')
       .getRawMany();
 
@@ -117,7 +124,7 @@ export class ReviewsService {
 
     const photoReviewCount = await this.reviewRepository
       .createQueryBuilder('r')
-      .where('r.expertProfileId = :id', { id: expertProfile.id })
+      .where('r.expertProfileId = :id', { id: expertProfileId })
       .andWhere('jsonb_array_length(r."imageUrls") > 0')
       .getCount();
 
@@ -130,7 +137,9 @@ export class ReviewsService {
     const qb = this.reviewRepository
       .createQueryBuilder('r')
       .leftJoinAndSelect('r.customer', 'customer')
-      .leftJoinAndSelect('r.deleteRequests', 'dr')
+      .leftJoinAndSelect('r.deleteRequests', 'dr', "dr.status = 'pending'")
+      .leftJoinAndSelect('r.expertProfile', 'ep')
+      .leftJoinAndSelect('ep.user', 'epUser')
       .where('r.customerId = :customerId', { customerId });
 
     if (photoOnly) qb.andWhere('jsonb_array_length(r."imageUrls") > 0');
@@ -138,9 +147,12 @@ export class ReviewsService {
     else qb.orderBy('r.createdAt', 'DESC');
 
     const total = await qb.getCount();
-    const reviews = await qb.skip((page - 1) * limit).take(limit).getMany();
+    const reviews = await qb
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getMany();
 
-    return { data: reviews.map((r) => this.toReviewDto(r)), total };
+    return { data: reviews.map(r => this.toReviewDto(r)), total };
   }
 
   async updateReview(id: number, userId: number, dto: UpdateReviewDto): Promise<ReviewResponseDto> {
@@ -155,7 +167,21 @@ export class ReviewsService {
     if (dto.comment !== undefined) review.comment = dto.comment;
 
     const saved = await this.reviewRepository.save(review);
+    await this.refreshExpertStats(review.expertProfileId);
     return this.toReviewDto(saved);
+  }
+
+  // 명인 프로필의 평점/리뷰 수 캐시 갱신 — 탐색·추천 정렬과 '평점 4+' 필터가 이 값을 사용
+  private async refreshExpertStats(expertProfileId: number): Promise<void> {
+    const row: { avg: string | null; count: string } | undefined = await this.reviewRepository
+      .createQueryBuilder('r')
+      .select('AVG(r.rating)', 'avg')
+      .addSelect('COUNT(*)', 'count')
+      .where('r.expertProfileId = :expertProfileId', { expertProfileId })
+      .getRawOne();
+    const count = Number(row?.count ?? 0);
+    const average = count > 0 ? Math.round(Number(row?.avg) * 10) / 10 : 0;
+    await this.expertProfileRepository.update(expertProfileId, { averageRating: average, totalReviewCount: count });
   }
 
   async createDeleteRequest(reviewId: number, requestedById: number): Promise<DeleteRequestResponseDto> {
@@ -189,6 +215,8 @@ export class ReviewsService {
       customerProfileImageUrl: review.customer?.profileImageUrl ?? null,
       imageUrls: review.imageUrls ?? [],
       deleteRequested,
+      expertProfileId: review.expertProfileId,
+      expertName: review.expertProfile ? expertDisplayName(review.expertProfile) : undefined,
     };
   }
 

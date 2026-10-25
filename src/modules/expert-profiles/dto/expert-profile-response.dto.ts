@@ -122,9 +122,12 @@ export class ShareLinkResponseDto {
   shareUrl: string;
 }
 
-export class ImageUploadResponseDto {
-  @ApiProperty({ description: '업로드된 이미지 URL 목록', example: ['https://cdn.example.com/img/1.jpg'] })
-  imageUrls: string[];
+export class UploadedFilesResponseDto {
+  @ApiProperty({
+    description: '업로드된 파일 공개 URL 목록 (요청 순서 유지) — PATCH /expert-profiles/me에 넣어 저장',
+    example: ['https://files.example.com/experts/1/images/uuid.jpg'],
+  })
+  urls: string[];
 }
 
 export class AvatarResponseDto {

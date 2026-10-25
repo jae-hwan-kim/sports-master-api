@@ -6,8 +6,13 @@ import { ExpertProfile } from '../expert-profiles/expert-profile.entity';
 import { Review } from '../reviews/review.entity';
 import { User } from '../users/user.entity';
 import { CreateDiagnosisRequestDto } from './dto/create-diagnosis-request.dto';
-import { DiagnosisSentItemDto, DiagnosisRequestResponseDto, DiagnosisIncomingItemDto } from './dto/diagnosis-response.dto';
+import {
+  DiagnosisSentItemDto,
+  DiagnosisRequestResponseDto,
+  DiagnosisIncomingItemDto,
+} from './dto/diagnosis-response.dto';
 import { DiagnosisGender, DiagnosisRequest, DiagnosisStatus } from './diagnosis-request.entity';
+import { ensureExpertProfile } from '../expert-profiles/ensure-expert-profile';
 
 @Injectable()
 export class DiagnosesService {
@@ -98,10 +103,7 @@ export class DiagnosesService {
   }
 
   async getIncoming(userId: number): Promise<DiagnosisIncomingItemDto[]> {
-    const expertProfile = await this.expertProfileRepository.findOne({ where: { userId } });
-    if (!expertProfile) {
-      throw new NotFoundException('명인 프로필이 존재하지 않습니다.');
-    }
+    const expertProfile = await ensureExpertProfile(this.expertProfileRepository.manager, userId);
 
     const requests = await this.diagnosisRequestRepository.find({
       where: { expertProfileId: expertProfile.id, status: Not(DiagnosisStatus.DELETED) },
@@ -144,8 +146,7 @@ export class DiagnosesService {
   }
 
   async markAsViewed(userId: number, requestId: number): Promise<void> {
-    const expertProfile = await this.expertProfileRepository.findOne({ where: { userId } });
-    if (!expertProfile) throw new NotFoundException('명인 프로필이 존재하지 않습니다.');
+    const expertProfile = await ensureExpertProfile(this.expertProfileRepository.manager, userId);
 
     const request = await this.diagnosisRequestRepository.findOne({ where: { id: requestId } });
     if (!request) throw new NotFoundException('진단요청을 찾을 수 없습니다.');
@@ -157,8 +158,7 @@ export class DiagnosesService {
   }
 
   async deleteRequest(userId: number, requestId: number): Promise<void> {
-    const expertProfile = await this.expertProfileRepository.findOne({ where: { userId } });
-    if (!expertProfile) throw new NotFoundException('명인 프로필이 존재하지 않습니다.');
+    const expertProfile = await ensureExpertProfile(this.expertProfileRepository.manager, userId);
 
     const request = await this.diagnosisRequestRepository.findOne({ where: { id: requestId } });
     if (!request) throw new NotFoundException('진단요청을 찾을 수 없습니다.');

@@ -10,7 +10,11 @@ export class DiagnosisSentItemDto {
   @ApiPropertyOptional({ description: '명인 프로필 이미지 URL', example: 'https://...', nullable: true })
   expertAvatarUrl: string | null;
 
-  @ApiPropertyOptional({ description: '명인 등급', enum: ['bronze', 'silver', 'gold', 'platinum', 'diamond'], nullable: true })
+  @ApiPropertyOptional({
+    description: '명인 등급',
+    enum: ['bronze', 'silver', 'gold', 'platinum', 'diamond'],
+    nullable: true,
+  })
   expertGrade: string | null;
 
   @ApiProperty({ description: '평균 별점', example: 4.5 })

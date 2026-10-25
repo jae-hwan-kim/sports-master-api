@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min, MaxLength } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateReviewDto {
@@ -20,6 +20,7 @@ export class CreateReviewDto {
   @ApiPropertyOptional({ description: '리뷰 코멘트', example: '정말 도움이 되었습니다!' })
   @IsString()
   @IsOptional()
+  @MaxLength(200)
   comment?: string;
 
   @ApiProperty({ description: '리뷰 요청 토큰 (딥링크 팝업 인증용)', example: 'abc123reviewtoken' })

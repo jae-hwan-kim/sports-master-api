@@ -29,6 +29,12 @@ export class ReviewResponseDto {
 
   @ApiProperty({ description: '삭제 요청 여부', example: false })
   deleteRequested: boolean;
+
+  @ApiProperty({ description: '리뷰 대상 명인 프로필 ID', example: 3 })
+  expertProfileId: number;
+
+  @ApiPropertyOptional({ description: '리뷰 대상 명인 이름 (내가 쓴 리뷰 목록에서만 채움)', example: '김명인' })
+  expertName?: string;
 }
 
 export class PaginatedReviewsDto {

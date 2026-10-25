@@ -16,7 +16,11 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ApiDataResponse } from '../../common/decorators/api-data-response.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CreateDiagnosisRequestDto } from './dto/create-diagnosis-request.dto';
-import { DiagnosisSentItemDto, DiagnosisIncomingItemDto, DiagnosisRequestResponseDto } from './dto/diagnosis-response.dto';
+import {
+  DiagnosisSentItemDto,
+  DiagnosisIncomingItemDto,
+  DiagnosisRequestResponseDto,
+} from './dto/diagnosis-response.dto';
 import { DiagnosesService } from './diagnoses.service';
 
 interface AuthenticatedRequest {

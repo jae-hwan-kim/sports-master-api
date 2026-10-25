@@ -1,5 +1,3 @@
-import { existsSync, mkdirSync } from 'fs';
-import { extname, join } from 'path';
 import {
   BadRequestException,
   Body,
@@ -16,7 +14,6 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { diskStorage } from 'multer';
 import { ApiDataResponse } from '../../common/decorators/api-data-response.decorator';
 import { AdminGuard } from '../../common/guards/admin-guard';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -27,11 +24,6 @@ import { UpdateCertificationStatusDto } from './dto/update-certification-status.
 
 interface AuthenticatedRequest {
   user: { id: number };
-}
-
-const uploadDir = join(process.cwd(), process.env.UPLOAD_DIR ?? 'uploads', 'certifications');
-if (!existsSync(uploadDir)) {
-  mkdirSync(uploadDir, { recursive: true });
 }
 
 const ALLOWED_MIME_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'application/pdf']);
@@ -47,11 +39,8 @@ export class CertificationsController {
   @ApiDataResponse(CertificationResponseDto)
   @UseInterceptors(
     FileInterceptor('file', {
-      storage: diskStorage({
-        destination: uploadDir,
-        filename: (_req, file, cb) =>
-          cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}${extname(file.originalname)}`),
-      }),
+      // 메모리로 받아 R2에 업로드 (Railway 디스크는 배포마다 초기화됨)
+      limits: { fileSize: 20 * 1024 * 1024 },
       fileFilter: (_req, file, cb) => {
         if (!ALLOWED_MIME_TYPES.has(file.mimetype)) {
           cb(new BadRequestException('이미지(jpg/png/webp) 또는 PDF 파일만 업로드할 수 있습니다.'), false);

@@ -15,6 +15,7 @@ import { ReviewTokenResponseDto } from '../reviews/dto/review-response.dto';
 import { UpdateModeDto } from '../users/dto/update-mode.dto';
 import { UpdateModeResponseDto } from '../users/dto/user-response.dto';
 import { User, UserMode } from '../users/user.entity';
+import { ensureExpertProfile, expertDisplayName } from '../expert-profiles/ensure-expert-profile';
 
 const REVIEW_REQUEST_TOKEN_EXPIRES_IN = '7d';
 const FEATURED_EXPERTS_LIMIT = 10;
@@ -91,9 +92,11 @@ export class HomeService {
   async getFeaturedExperts(): Promise<FeaturedExpertDto[]> {
     const experts = await this.expertProfileRepository
       .createQueryBuilder('ep')
-      .innerJoin('ep.user', 'u')
+      .innerJoinAndSelect('ep.user', 'u')
       .where('u.deletedAt IS NULL')
       .andWhere('u.isActive = true')
+      // 지역도 입력하지 않은 빈 프로필(가입 직후 자동 생성분)은 노출하지 않음
+      .andWhere("ep.region <> ''")
       // 광고 활성 + 미만료 명인 우선
       .orderBy(
         'CASE WHEN "ep"."isAdActive" AND ("ep"."adExpiresAt" IS NULL OR "ep"."adExpiresAt" > NOW()) THEN 0 ELSE 1 END',
@@ -107,7 +110,7 @@ export class HomeService {
 
     return experts.map(ep => ({
       id: ep.id,
-      name: ep.centerName,
+      name: expertDisplayName(ep),
       introduction: ep.introduction,
       region: ep.region,
       keywordTags: ep.keywordTags,
@@ -151,9 +154,11 @@ export class HomeService {
       throw new NotFoundException('사용자를 찾을 수 없습니다.');
     }
 
-    // ExpertProfile 생성 경로가 아직 없어(자격증 인증 체계 별도 작업 예정) register()와 동일하게
-    // 관대히 허용한다 — 명인 프로필 존재 검증은 그 체계가 생기면 다시 추가한다.
     const targetMode = dto.mode as unknown as UserMode;
+    // 명인 모드 첫 전환 시 빈 명인 프로필 생성 (앱에 별도 프로필 생성 단계가 없음)
+    if (targetMode === UserMode.EXPERT) {
+      await ensureExpertProfile(this.userRepository.manager, userId);
+    }
     user.currentMode = targetMode;
     user.hasSelectedMode = true;
     await this.userRepository.save(user);
@@ -161,10 +166,7 @@ export class HomeService {
   }
 
   private async getExpertProfileOrThrow(userId: number): Promise<ExpertProfile> {
-    const expertProfile = await this.expertProfileRepository.findOne({ where: { userId } });
-    if (!expertProfile) {
-      throw new NotFoundException('명인 프로필이 존재하지 않습니다.');
-    }
+    const expertProfile = await ensureExpertProfile(this.expertProfileRepository.manager, userId);
     return expertProfile;
   }
 }
