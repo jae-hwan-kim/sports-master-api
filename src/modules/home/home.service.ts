@@ -7,7 +7,7 @@ import { requireEnv } from '../../common/config/require-env';
 import { ChatRoom } from '../chat-rooms/chat-room.entity';
 import { DiagnosisRequest, DiagnosisStatus } from '../diagnoses/diagnosis-request.entity';
 import { DiagnosisIncomingItemDto } from '../diagnoses/dto/diagnosis-response.dto';
-import { CertificationStatus, ExpertProfile } from '../expert-profiles/expert-profile.entity';
+import { ExpertProfile } from '../expert-profiles/expert-profile.entity';
 import { ExpertProfileResponseDto } from '../expert-profiles/dto/expert-profile-response.dto';
 import { FeaturedExpertDto } from '../expert-profiles/dto/featured-expert.dto';
 import { CreateReviewTokenDto } from '../reviews/dto/create-review-token.dto';
@@ -87,13 +87,13 @@ export class HomeService {
   }
 
   // 이달의 소개 명인 — 광고 기능 전까지 광고 활성 명인 우선 + 평점/리뷰순으로 노출
+  // 명인 인증 승인 처리 경로가 아직 없어 승인 여부로 거르지 않음 (승인 체계 생기면 다시 추가)
   async getFeaturedExperts(): Promise<FeaturedExpertDto[]> {
     const experts = await this.expertProfileRepository
       .createQueryBuilder('ep')
       .innerJoin('ep.user', 'u')
       .where('u.deletedAt IS NULL')
       .andWhere('u.isActive = true')
-      .andWhere('ep.certificationStatus = :approved', { approved: CertificationStatus.APPROVED })
       // 광고 활성 + 미만료 명인 우선
       .orderBy(
         'CASE WHEN "ep"."isAdActive" AND ("ep"."adExpiresAt" IS NULL OR "ep"."adExpiresAt" > NOW()) THEN 0 ELSE 1 END',

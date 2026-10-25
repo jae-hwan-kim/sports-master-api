@@ -3,9 +3,13 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateExpertProfileDto } from './dto/create-expert-profile.dto';
+import { ExpertListItemDto } from './dto/expert-list-item.dto';
 import { ExpertProfileResponseDto, ImageUploadResponseDto } from './dto/expert-profile-response.dto';
 import { UpdateExpertProfileDto } from './dto/update-expert-profile.dto';
 import { ExpertProfile } from './expert-profile.entity';
+
+// 페이지네이션 도입 전 상한
+const EXPERT_LIST_LIMIT = 100;
 
 @Injectable()
 export class ExpertProfilesService {
@@ -40,6 +44,45 @@ export class ExpertProfilesService {
     const profile = await this.expertProfileRepository.findOne({ where: { id } });
     if (!profile) throw new NotFoundException('명인 프로필이 없습니다.');
     return this.toDto(profile);
+  }
+
+  // 명인탐색 — 활성 회원의 명인 전체, 검색어/지역/최소 평점은 주어진 것만 적용
+  async list(filter: { q?: string; region?: string; minRating?: number }): Promise<ExpertListItemDto[]> {
+    const qb = this.expertProfileRepository
+      .createQueryBuilder('ep')
+      .innerJoin('ep.user', 'u')
+      .where('u.deletedAt IS NULL')
+      .andWhere('u.isActive = true');
+
+    const q = filter.q?.trim();
+    if (q) {
+      qb.andWhere('(ep.centerName ILIKE :q OR ep.representativeService ILIKE :q)', { q: `%${q}%` });
+    }
+    const region = filter.region?.trim();
+    if (region && region !== '전국') {
+      qb.andWhere('ep.region ILIKE :region', { region: `%${region}%` });
+    }
+    if (filter.minRating !== undefined) {
+      qb.andWhere('ep.averageRating >= :minRating', { minRating: filter.minRating });
+    }
+
+    const experts = await qb
+      .orderBy('ep.averageRating', 'DESC')
+      .addOrderBy('ep.totalReviewCount', 'DESC')
+      .addOrderBy('ep.id', 'DESC')
+      .limit(EXPERT_LIST_LIMIT)
+      .getMany();
+
+    return experts.map(ep => ({
+      id: ep.id,
+      name: ep.centerName,
+      region: ep.region,
+      representativeService: ep.representativeService,
+      keywordTags: ep.keywordTags,
+      imageUrl: ep.portfolioImageUrls?.[0] ?? ep.imageUrls?.[0] ?? null,
+      averageRating: Number(ep.averageRating),
+      totalReviewCount: ep.totalReviewCount,
+    }));
   }
 
   async updateMe(userId: number, dto: UpdateExpertProfileDto): Promise<ExpertProfileResponseDto> {

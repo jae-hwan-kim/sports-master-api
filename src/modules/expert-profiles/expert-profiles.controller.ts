@@ -4,9 +4,11 @@ import {
   Delete,
   Get,
   Param,
+  ParseFloatPipe,
   ParseIntPipe,
   Patch,
   Post,
+  Query,
   Req,
   UploadedFiles,
   UseGuards,
@@ -17,6 +19,7 @@ import { ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ApiDataResponse } from '../../common/decorators/api-data-response.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CreateExpertProfileDto } from './dto/create-expert-profile.dto';
+import { ExpertListItemDto } from './dto/expert-list-item.dto';
 import { ExpertProfileResponseDto, ImageUploadResponseDto } from './dto/expert-profile-response.dto';
 import { UpdateExpertProfileDto } from './dto/update-expert-profile.dto';
 import { ExpertProfilesService } from './expert-profiles.service';
@@ -43,6 +46,17 @@ export class ExpertProfilesController {
   @Get('me')
   getMe(@Req() req: AuthenticatedRequest) {
     return this.expertProfilesService.getMe(req.user.id);
+  }
+
+  @ApiOperation({ summary: '명인 목록 조회 (고객 명인탐색) — 필터 없으면 전체' })
+  @ApiDataResponse(ExpertListItemDto, { isArray: true })
+  @Get()
+  list(
+    @Query('q') q?: string,
+    @Query('region') region?: string,
+    @Query('minRating', new ParseFloatPipe({ optional: true })) minRating?: number,
+  ) {
+    return this.expertProfilesService.list({ q, region, minRating });
   }
 
   @ApiOperation({ summary: '명인 프로필 상세 조회 (고객용)' })
