@@ -1,6 +1,16 @@
-import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Not, Repository } from 'typeorm';
+import { requireEnv } from '../../common/config/require-env';
+import { ChatRoom } from '../chat-rooms/chat-room.entity';
 import { DiagnosisRequest, DiagnosisStatus } from '../diagnoses/diagnosis-request.entity';
 import { ExpertProfile } from '../expert-profiles/expert-profile.entity';
 import { Review } from './review.entity';
@@ -8,6 +18,7 @@ import { ReviewDeleteRequest, DeleteRequestStatus } from './review-delete-reques
 import {
   DeleteRequestResponseDto,
   PaginatedReviewsDto,
+  ReviewLinkInfoDto,
   ReviewResponseDto,
   ReviewSummaryDto,
 } from './dto/review-response.dto';
@@ -34,14 +45,65 @@ export class ReviewsService {
     private readonly expertProfileRepository: Repository<ExpertProfile>,
     @InjectRepository(DiagnosisRequest)
     private readonly diagnosisRequestRepository: Repository<DiagnosisRequest>,
+    @InjectRepository(ChatRoom) private readonly chatRoomRepository: Repository<ChatRoom>,
+    private readonly jwtService: JwtService,
+    private readonly config: ConfigService,
   ) {}
 
-  async createReview(userId: number, dto: CreateDiagnosisReviewDto): Promise<{ id: number }> {
-    const diagnosisExists = await this.diagnosisRequestRepository.findOne({
-      where: { customerId: userId, expertProfileId: dto.expertProfileId, status: Not(DiagnosisStatus.DELETED) },
+  // 리뷰 요청 링크 토큰 → 명인 프로필 ID (명인 단위 / 채팅방 단위 토큰 모두 지원)
+  private async resolveReviewToken(token: string): Promise<number> {
+    const invalid = new BadRequestException('만료되었거나 올바르지 않은 리뷰 링크입니다.');
+    let payload: { typ?: string; expertProfileId?: number; chatRoomId?: number };
+    try {
+      payload = await this.jwtService.verifyAsync(token, { secret: requireEnv(this.config, 'JWT_ACCESS_SECRET') });
+    } catch {
+      throw invalid;
+    }
+    if (payload.typ !== 'review') throw invalid;
+    if (payload.expertProfileId) return payload.expertProfileId;
+    if (payload.chatRoomId) {
+      const chatRoom = await this.chatRoomRepository.findOne({ where: { id: payload.chatRoomId } });
+      if (chatRoom) return chatRoom.expertProfileId;
+    }
+    throw invalid;
+  }
+
+  async getReviewLinkInfo(userId: number, token: string): Promise<ReviewLinkInfoDto> {
+    const expertProfileId = await this.resolveReviewToken(token);
+    const expert = await this.expertProfileRepository.findOne({
+      where: { id: expertProfileId },
+      relations: { user: true },
     });
-    if (!diagnosisExists) {
-      throw new NotFoundException('해당 명인에게 진단 요청한 내역이 없습니다.');
+    if (!expert) throw new NotFoundException('명인 프로필이 없습니다.');
+    const existing = await this.reviewRepository.findOne({ where: { customerId: userId, expertProfileId } });
+    return {
+      expertProfileId,
+      expertName: expertDisplayName(expert),
+      expertAvatarUrl: expert.profileImageUrl ?? expert.portfolioImageUrls?.[0] ?? null,
+      expertGrade: expert.expertGrade,
+      isMine: expert.userId === userId,
+      alreadyReviewed: !!existing,
+    };
+  }
+
+  async createReview(userId: number, dto: CreateDiagnosisReviewDto): Promise<{ id: number }> {
+    const expert = await this.expertProfileRepository.findOne({ where: { id: dto.expertProfileId } });
+    if (!expert) throw new NotFoundException('명인 프로필이 없습니다.');
+    if (expert.userId === userId) throw new ForbiddenException('본인에게는 리뷰를 작성할 수 없습니다.');
+
+    // 명인이 보낸 리뷰 링크로 들어온 경우 진단요청 이력 없이도 작성 가능 (외부 고객)
+    if (dto.reviewToken) {
+      const tokenExpertId = await this.resolveReviewToken(dto.reviewToken);
+      if (tokenExpertId !== dto.expertProfileId) {
+        throw new BadRequestException('리뷰 링크의 명인과 일치하지 않습니다.');
+      }
+    } else {
+      const diagnosisExists = await this.diagnosisRequestRepository.findOne({
+        where: { customerId: userId, expertProfileId: dto.expertProfileId, status: Not(DiagnosisStatus.DELETED) },
+      });
+      if (!diagnosisExists) {
+        throw new NotFoundException('해당 명인에게 진단 요청한 내역이 없습니다.');
+      }
     }
 
     const existing = await this.reviewRepository.findOne({

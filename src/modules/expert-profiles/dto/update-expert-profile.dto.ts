@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { ArrayMaxSize, IsArray, IsOptional, IsString, IsUrl, ValidateIf } from 'class-validator';
+import { ArrayMaxSize, IsArray, IsOptional, IsString, IsUrl, Matches, ValidateIf } from 'class-validator';
 
 export class UpdateExpertProfileDto {
   @ApiPropertyOptional({ description: '활동 지역', example: '서울 서초구' })
@@ -51,6 +51,21 @@ export class UpdateExpertProfileDto {
   @IsUrl()
   @IsOptional()
   educationPdfUrl?: string;
+
+  @ApiPropertyOptional({
+    description: '프로필 대표 사진 URL — POST me/uploads?kind=image 결과 URL, 빈 문자열이면 삭제',
+    example: 'https://files.example.com/experts/1/images/uuid.jpg',
+  })
+  @ValidateIf((_, value) => value !== '')
+  @IsUrl()
+  @IsOptional()
+  profileImageUrl?: string;
+
+  @ApiPropertyOptional({ description: '센터 연락처 (숫자만 9~11자리), 빈 문자열이면 삭제', example: '01012345678' })
+  @ValidateIf((_, value) => value !== '')
+  @Matches(/^0\d{8,10}$/, { message: '연락처는 0으로 시작하는 숫자 9~11자리여야 합니다.' })
+  @IsOptional()
+  centerPhone?: string;
 
   @ApiPropertyOptional({ description: '카카오 오픈채팅 URL', example: 'https://open.kakao.com/o/example' })
   @IsUrl()

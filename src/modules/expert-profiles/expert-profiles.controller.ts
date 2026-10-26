@@ -4,7 +4,6 @@ import {
   Controller,
   Get,
   Param,
-  ParseFloatPipe,
   ParseEnumPipe,
   ParseIntPipe,
   Patch,
@@ -21,6 +20,7 @@ import { ApiDataResponse } from '../../common/decorators/api-data-response.decor
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CreateExpertProfileDto } from './dto/create-expert-profile.dto';
 import { ExpertListItemDto } from './dto/expert-list-item.dto';
+import { ListExpertsQueryDto } from './dto/list-experts-query.dto';
 import { ExpertProfileResponseDto, UploadedFilesResponseDto } from './dto/expert-profile-response.dto';
 import { UpdateExpertProfileDto } from './dto/update-expert-profile.dto';
 import { ExpertProfilesService } from './expert-profiles.service';
@@ -55,12 +55,8 @@ export class ExpertProfilesController {
   @ApiOperation({ summary: '명인 목록 조회 (고객 명인탐색) — 필터 없으면 전체' })
   @ApiDataResponse(ExpertListItemDto, { isArray: true })
   @Get()
-  list(
-    @Query('q') q?: string,
-    @Query('region') region?: string,
-    @Query('minRating', new ParseFloatPipe({ optional: true })) minRating?: number,
-  ) {
-    return this.expertProfilesService.list({ q, region, minRating });
+  list(@Query() query: ListExpertsQueryDto) {
+    return this.expertProfilesService.list(query);
   }
 
   @ApiOperation({ summary: '명인 프로필 상세 조회 (고객용)' })

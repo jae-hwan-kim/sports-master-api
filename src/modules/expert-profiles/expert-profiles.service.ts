@@ -93,7 +93,7 @@ export class ExpertProfilesService {
       region: ep.region,
       representativeService: ep.representativeService,
       keywordTags: ep.keywordTags,
-      imageUrl: ep.portfolioImageUrls?.[0] ?? ep.imageUrls?.[0] ?? null,
+      imageUrl: ep.profileImageUrl ?? ep.portfolioImageUrls?.[0] ?? ep.imageUrls?.[0] ?? null,
       averageRating: Number(ep.averageRating),
       totalReviewCount: ep.totalReviewCount,
     }));
@@ -109,6 +109,7 @@ export class ExpertProfilesService {
     if (dto.careerText !== undefined) profile.careerText = dto.careerText;
     if (dto.keywordTags !== undefined) profile.keywordTags = dto.keywordTags;
     if (dto.openChatUrl !== undefined) profile.kakaoOpenChatUrl = dto.openChatUrl;
+    if (dto.centerPhone !== undefined) profile.centerPhone = dto.centerPhone || null;
 
     // 파일 필드: 우리 저장소 URL만 허용, 빠진 파일은 저장 후 R2에서 정리
     const removedFiles: string[] = [];
@@ -117,6 +118,12 @@ export class ExpertProfilesService {
       const next = dto.portfolioImageUrls;
       removedFiles.push(...(profile.portfolioImageUrls ?? []).filter(url => !next.includes(url)));
       profile.portfolioImageUrls = next.length > 0 ? next : null;
+    }
+    if (dto.profileImageUrl !== undefined) {
+      const next = dto.profileImageUrl || null;
+      if (next) this.assertOwnUrls([next]);
+      if (profile.profileImageUrl && profile.profileImageUrl !== next) removedFiles.push(profile.profileImageUrl);
+      profile.profileImageUrl = next;
     }
     if (dto.educationPdfUrl !== undefined) {
       const next = dto.educationPdfUrl || null;
@@ -176,6 +183,8 @@ export class ExpertProfilesService {
       keywordTags: profile.keywordTags,
       careerText: profile.careerText,
       educationPdfUrl: profile.educationPdfUrl,
+      profileImageUrl: profile.profileImageUrl,
+      centerPhone: profile.centerPhone,
       imageUrls: profile.imageUrls ?? [],
       certificateUrls: profile.certificateUrls ?? [],
       centerInfoUrl: profile.centerInfoUrl,

@@ -53,6 +53,12 @@ export class ExpertProfileResponseDto {
   @ApiPropertyOptional({ description: '학력 PDF URL', example: 'https://cdn.example.com/edu/1.pdf' })
   educationPdfUrl: string | null;
 
+  @ApiPropertyOptional({ description: '프로필 대표 사진 URL', example: 'https://cdn.example.com/images/1.jpg' })
+  profileImageUrl: string | null;
+
+  @ApiPropertyOptional({ description: '센터 연락처 (숫자만)', example: '01012345678' })
+  centerPhone: string | null;
+
   @ApiPropertyOptional({
     description: '프로필 이미지 URL 목록',
     example: ['https://cdn.example.com/images/1.jpg'],

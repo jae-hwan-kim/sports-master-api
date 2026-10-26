@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Patch, Post, Req, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import type { Request } from 'express';
 import { ApiDataResponse } from '../../common/decorators/api-data-response.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { DiagnosisIncomingItemDto } from '../diagnoses/dto/diagnosis-response.dto';
@@ -11,8 +12,14 @@ import { UpdateModeDto } from '../users/dto/update-mode.dto';
 import { UpdateModeResponseDto } from '../users/dto/user-response.dto';
 import { HomeService } from './home.service';
 
-interface AuthenticatedRequest {
+interface AuthenticatedRequest extends Request {
   user: { id: number };
+}
+
+// 프록시(Railway) 뒤에서는 x-forwarded-proto 로 원래 스킴(https)을 받음
+function requestBaseUrl(req: Request): string {
+  const proto = req.get('x-forwarded-proto')?.split(',')[0]?.trim() || req.protocol;
+  return `${proto}://${req.get('host')}`;
 }
 
 @ApiTags('home')
@@ -32,7 +39,7 @@ export class HomeController {
   @ApiDataResponse(ReviewTokenResponseDto)
   @Post('review-request')
   createReviewRequestLink(@Req() req: AuthenticatedRequest, @Body() dto: CreateReviewTokenDto) {
-    return this.homeService.createReviewRequestLink(req.user.id, dto);
+    return this.homeService.createReviewRequestLink(req.user.id, dto, requestBaseUrl(req));
   }
 
   @ApiOperation({ summary: '고객 홈: 이달의 소개 명인 목록' })

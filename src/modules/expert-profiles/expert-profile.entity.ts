@@ -53,6 +53,14 @@ export class ExpertProfile {
   @Column({ nullable: true })
   kakaoOpenChatUrl: string | null;
 
+  // 프로필 카드 대표 사진 — 하단 소개 이미지(portfolioImageUrls)와 별개
+  @Column({ type: 'varchar', nullable: true })
+  profileImageUrl: string | null;
+
+  // 센터 연락처 — 숫자만 저장 (표시용 하이픈은 앱에서 포맷)
+  @Column({ type: 'varchar', length: 11, nullable: true })
+  centerPhone: string | null;
+
   @Column({ nullable: true })
   externalSiteUrl: string | null;
 

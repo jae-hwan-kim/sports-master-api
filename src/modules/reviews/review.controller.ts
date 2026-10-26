@@ -19,6 +19,7 @@ import {
   DeleteRequestResponseDto,
   PaginatedReviewsDto,
   ReviewCreatedDto,
+  ReviewLinkInfoDto,
   ReviewResponseDto,
   ReviewSummaryDto,
 } from './dto/review-response.dto';
@@ -40,6 +41,14 @@ export class ReviewsController {
   @Post()
   createReview(@Req() req: AuthenticatedRequest, @Body() dto: CreateDiagnosisReviewDto) {
     return this.reviewsService.createReview(req.user.id, dto);
+  }
+
+  @ApiOperation({ summary: '리뷰 요청 링크 토큰 확인 (고객용) — 링크로 열린 리뷰 작성 화면의 대상 명인' })
+  @ApiQuery({ name: 'token', type: String, required: true })
+  @ApiDataResponse(ReviewLinkInfoDto)
+  @Get('link')
+  getReviewLinkInfo(@Req() req: AuthenticatedRequest, @Query('token') token: string) {
+    return this.reviewsService.getReviewLinkInfo(req.user.id, token ?? '');
   }
 
   @ApiOperation({ summary: '내 리뷰 목록 조회 (명인 전용)' })

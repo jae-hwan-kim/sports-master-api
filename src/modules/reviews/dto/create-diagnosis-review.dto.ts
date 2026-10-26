@@ -22,4 +22,9 @@ export class CreateDiagnosisReviewDto {
   @IsOptional()
   @MaxLength(200)
   comment?: string;
+
+  @ApiPropertyOptional({ description: '리뷰 요청 링크 토큰 — 있으면 진단요청 이력 없이 작성 가능 (명인이 보낸 링크)' })
+  @IsString()
+  @IsOptional()
+  reviewToken?: string;
 }

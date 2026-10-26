@@ -104,4 +104,30 @@ export class ReviewTokenResponseDto {
 
   @ApiProperty({ description: '딥링크 URL', example: 'sportsmaster://review?token=abc123reviewtoken' })
   deepLink: string;
+
+  @ApiProperty({
+    description: '공유용 https 링크 — 메신저에서 클릭 가능, 열면 앱(딥링크)으로 이동',
+    example: 'https://api.example.com/r/review?token=abc123reviewtoken',
+  })
+  shareUrl: string;
+}
+
+export class ReviewLinkInfoDto {
+  @ApiProperty({ description: '명인 프로필 ID', example: 5 })
+  expertProfileId: number;
+
+  @ApiProperty({ description: '명인 표시 이름', example: '아쿠아퍼포먼스' })
+  expertName: string;
+
+  @ApiPropertyOptional({ description: '명인 대표 사진 URL', example: 'https://cdn.example.com/images/1.jpg' })
+  expertAvatarUrl: string | null;
+
+  @ApiPropertyOptional({ description: '명인 등급', enum: ['bronze', 'silver', 'gold', 'platinum', 'diamond'] })
+  expertGrade: string | null;
+
+  @ApiProperty({ description: '본인(명인)의 링크인지 — 본인에게는 리뷰 작성 불가', example: false })
+  isMine: boolean;
+
+  @ApiProperty({ description: '이미 이 명인에게 리뷰를 작성했는지', example: false })
+  alreadyReviewed: boolean;
 }

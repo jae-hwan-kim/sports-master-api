@@ -20,6 +20,14 @@ import { ensureExpertProfile, expertDisplayName } from '../expert-profiles/ensur
 const REVIEW_REQUEST_TOKEN_EXPIRES_IN = '7d';
 const FEATURED_EXPERTS_LIMIT = 10;
 
+function toReviewLink(reviewToken: string, shareBaseUrl: string): ReviewTokenResponseDto {
+  return {
+    reviewToken,
+    deepLink: `sportsmaster://review?token=${reviewToken}`,
+    shareUrl: `${shareBaseUrl}/r/review?token=${reviewToken}`,
+  };
+}
+
 @Injectable()
 export class HomeService {
   constructor(
@@ -49,6 +57,8 @@ export class HomeService {
       keywordTags: expertProfile.keywordTags,
       careerText: expertProfile.careerText,
       educationPdfUrl: expertProfile.educationPdfUrl,
+      profileImageUrl: expertProfile.profileImageUrl,
+      centerPhone: expertProfile.centerPhone,
       imageUrls: expertProfile.imageUrls ?? [],
       certificateUrls: expertProfile.certificateUrls ?? [],
       centerInfoUrl: expertProfile.centerInfoUrl ?? null,
@@ -58,7 +68,12 @@ export class HomeService {
     };
   }
 
-  async createReviewRequestLink(userId: number, dto: CreateReviewTokenDto): Promise<ReviewTokenResponseDto> {
+  // shareBaseUrl: 요청이 들어온 API 주소 (https 중계 페이지 /r/review 가 같은 서버에 있음)
+  async createReviewRequestLink(
+    userId: number,
+    dto: CreateReviewTokenDto,
+    shareBaseUrl: string,
+  ): Promise<ReviewTokenResponseDto> {
     const expertProfile = await this.getExpertProfileOrThrow(userId);
     const signOptions = {
       secret: requireEnv(this.config, 'JWT_ACCESS_SECRET'),
@@ -71,7 +86,7 @@ export class HomeService {
         { typ: 'review', expertProfileId: expertProfile.id },
         signOptions,
       );
-      return { reviewToken, deepLink: `sportsmaster://review?token=${reviewToken}` };
+      return toReviewLink(reviewToken, shareBaseUrl);
     }
 
     const chatRoom = await this.chatRoomRepository.findOne({ where: { id: dto.chatRoomId } });
@@ -84,7 +99,7 @@ export class HomeService {
     chatRoom.reviewRequestSentAt = new Date();
     await this.chatRoomRepository.save(chatRoom);
 
-    return { reviewToken, deepLink: `sportsmaster://review?token=${reviewToken}` };
+    return toReviewLink(reviewToken, shareBaseUrl);
   }
 
   // 이달의 소개 명인 — 광고 기능 전까지 광고 활성 명인 우선 + 평점/리뷰순으로 노출
@@ -114,8 +129,8 @@ export class HomeService {
       introduction: ep.introduction,
       region: ep.region,
       keywordTags: ep.keywordTags,
-      // 상세 모달과 같은 이미지 출처 우선 (portfolioImageUrls → imageUrls)
-      imageUrl: ep.portfolioImageUrls?.[0] ?? ep.imageUrls?.[0] ?? null,
+      // 프로필 대표 사진 우선, 없으면 소개 이미지 첫 장
+      imageUrl: ep.profileImageUrl ?? ep.portfolioImageUrls?.[0] ?? ep.imageUrls?.[0] ?? null,
       expertGrade: ep.expertGrade,
     }));
   }
