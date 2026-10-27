@@ -63,11 +63,16 @@ export class FavoriteExpertsService {
     return favorites.map(f => ({
       id: f.expertProfile.id,
       name: expertDisplayName(f.expertProfile),
+      introduction: f.expertProfile.introduction,
       grade: f.expertProfile.expertGrade,
       reviewCount: f.expertProfile.totalReviewCount,
       // PG decimal은 문자열로 옴 — 앱에서 toFixed 호출하므로 숫자로 변환
       avgRating: Number(f.expertProfile.averageRating),
-      avatarUrl: f.expertProfile.portfolioImageUrls?.[0] ?? f.expertProfile.imageUrls?.[0] ?? null,
+      avatarUrl:
+        f.expertProfile.profileImageUrl ??
+        f.expertProfile.portfolioImageUrls?.[0] ??
+        f.expertProfile.imageUrls?.[0] ??
+        null,
     }));
   }
 }

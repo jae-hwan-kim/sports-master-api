@@ -4,7 +4,7 @@ export class ExpertListItemDto {
   @ApiProperty({ description: '명인 프로필 ID', example: 5 })
   id: number;
 
-  @ApiProperty({ description: '센터명', example: '아쿠아퍼포먼스' })
+  @ApiProperty({ description: '표시 이름 (닉네임, 없으면 이름)', example: '김명인' })
   name: string;
 
   @ApiProperty({ description: '지역', example: '경기 고양시 일산서구' })
@@ -12,6 +12,9 @@ export class ExpertListItemDto {
 
   @ApiProperty({ description: '대표 서비스', example: '재활 트레이닝' })
   representativeService: string;
+
+  @ApiPropertyOptional({ description: '소개글', example: '국가대표 상비군 출신 건강운동관리사입니다.' })
+  introduction: string | null;
 
   @ApiPropertyOptional({ description: '키워드 태그', example: ['방문재활', '선수트레이닝'] })
   keywordTags: string[] | null;

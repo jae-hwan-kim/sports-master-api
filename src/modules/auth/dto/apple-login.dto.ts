@@ -14,4 +14,12 @@ export class AppleLoginDto {
   @IsString()
   @IsOptional()
   authorizationCode?: string;
+
+  @ApiPropertyOptional({
+    description: '애플 사용자 이름 (최초 로그인 시에만 애플이 제공)',
+    example: '홍길동',
+  })
+  @IsString()
+  @IsOptional()
+  fullName?: string;
 }

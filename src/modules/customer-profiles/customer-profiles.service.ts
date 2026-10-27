@@ -78,6 +78,7 @@ export class CustomerProfilesService {
       id: p.id,
       userId: p.userId,
       nickname: p.user?.nickname ?? '',
+      name: p.user?.name ?? null,
       age: p.age,
       gender: p.gender,
       ageGroup: p.ageGroup,

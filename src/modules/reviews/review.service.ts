@@ -233,6 +233,20 @@ export class ReviewsService {
     return this.toReviewDto(saved);
   }
 
+  async deleteReview(id: number, userId: number): Promise<{ message: string }> {
+    const review = await this.reviewRepository.findOne({ where: { id } });
+    if (!review) throw new NotFoundException('리뷰를 찾을 수 없습니다.');
+    if (review.customerId !== userId) throw new ForbiddenException('본인의 리뷰만 삭제할 수 있습니다.');
+
+    // 삭제 요청 행이 review를 FK로 참조 — 함께 정리
+    await this.reviewRepository.manager.transaction(async manager => {
+      await manager.delete(ReviewDeleteRequest, { reviewId: id });
+      await manager.delete(Review, { id });
+    });
+    await this.refreshExpertStats(review.expertProfileId);
+    return { message: '리뷰가 삭제되었습니다.' };
+  }
+
   // 명인 프로필의 평점/리뷰 수 캐시 갱신 — 탐색·추천 정렬과 '평점 4+' 필터가 이 값을 사용
   private async refreshExpertStats(expertProfileId: number): Promise<void> {
     const row: { avg: string | null; count: string } | undefined = await this.reviewRepository
@@ -279,6 +293,9 @@ export class ReviewsService {
       deleteRequested,
       expertProfileId: review.expertProfileId,
       expertName: review.expertProfile ? expertDisplayName(review.expertProfile) : undefined,
+      expertAvatarUrl: review.expertProfile
+        ? (review.expertProfile.profileImageUrl ?? review.expertProfile.portfolioImageUrls?.[0] ?? null)
+        : undefined,
     };
   }
 

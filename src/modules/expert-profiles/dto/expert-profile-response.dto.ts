@@ -13,6 +13,9 @@ export class ExpertProfileResponseDto {
   @ApiProperty({ description: '센터명', example: '강남 스포츠 클리닉' })
   centerName: string;
 
+  @ApiProperty({ description: '표시 이름 (닉네임, 없으면 이름)', example: '김명인' })
+  name: string;
+
   @ApiProperty({ description: '대표 서비스', example: '재활 트레이닝' })
   representativeService: string;
 

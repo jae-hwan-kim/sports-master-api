@@ -10,6 +10,9 @@ export class CustomerProfileResponseDto {
   @ApiProperty({ description: '활동명', example: '스포츠러버' })
   nickname: string;
 
+  @ApiPropertyOptional({ description: '이름 (소셜 로그인 제공자 이름, 닉네임 없을 때 표시용)', example: '홍길동' })
+  name: string | null;
+
   @ApiPropertyOptional({ description: '나이', example: 28 })
   age: number | null;
 

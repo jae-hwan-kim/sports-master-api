@@ -12,7 +12,8 @@ import {
   DiagnosisIncomingItemDto,
 } from './dto/diagnosis-response.dto';
 import { DiagnosisGender, DiagnosisRequest, DiagnosisStatus } from './diagnosis-request.entity';
-import { ensureExpertProfile } from '../expert-profiles/ensure-expert-profile';
+import { ensureExpertProfile, expertDisplayName } from '../expert-profiles/ensure-expert-profile';
+import { userDisplayName } from '../users/user-display-name';
 
 @Injectable()
 export class DiagnosesService {
@@ -59,8 +60,10 @@ export class DiagnosesService {
 
     return experts.map(ep => ({
       expertProfileId: ep.id,
-      expertName: ep.centerName || ep.user?.nickname || String(ep.id),
-      expertAvatarUrl: ep.user?.profileImageUrl ?? null,
+      expertName: expertDisplayName(ep),
+      expertIntroduction: ep.introduction,
+      // 명인 탐색 카드와 같은 대표 사진 우선순위
+      expertAvatarUrl: ep.profileImageUrl ?? ep.portfolioImageUrls?.[0] ?? ep.user?.profileImageUrl ?? null,
       expertGrade: ep.expertGrade ?? null,
       avgRating: Number(ep.averageRating),
       reviewCount: ep.totalReviewCount,
@@ -86,7 +89,7 @@ export class DiagnosesService {
     request.customerId = userId;
     request.expertProfileId = dto.expertProfileId;
     request.customerPersonalCode = user.personalCode;
-    request.customerName = user.nickname ?? user.personalCode;
+    request.customerName = userDisplayName(user) || user.personalCode;
     request.customerAge = cp?.age ?? null;
     request.customerGender = (cp?.gender ?? null) as unknown as DiagnosisGender | null;
     request.customerRegion = cp?.region ?? null;

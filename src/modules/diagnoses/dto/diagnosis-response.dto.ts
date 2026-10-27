@@ -4,8 +4,15 @@ export class DiagnosisSentItemDto {
   @ApiProperty({ description: '명인 프로필 ID', example: 5 })
   expertProfileId: number;
 
-  @ApiProperty({ description: '명인 이름 (센터명 또는 닉네임)', example: '운동의신 센터' })
+  @ApiProperty({ description: '명인 표시 이름 (닉네임, 없으면 이름)', example: '김명인' })
   expertName: string;
+
+  @ApiPropertyOptional({
+    description: '명인 소개글',
+    example: '국가대표 상비군 출신 건강운동관리사입니다.',
+    nullable: true,
+  })
+  expertIntroduction: string | null;
 
   @ApiPropertyOptional({ description: '명인 프로필 이미지 URL', example: 'https://...', nullable: true })
   expertAvatarUrl: string | null;

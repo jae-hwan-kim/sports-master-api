@@ -59,6 +59,10 @@ export class User {
   @Column({ unique: true, nullable: true })
   nickname: string | null;
 
+  // 소셜 로그인 제공자에서 받은 이름 — 닉네임이 없을 때 표시용
+  @Column({ type: 'varchar', nullable: true })
+  name: string | null;
+
   @Column({ default: true })
   isActive: boolean;
 

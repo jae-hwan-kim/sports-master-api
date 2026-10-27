@@ -5,6 +5,7 @@ import * as bcrypt from 'bcrypt';
 import { AuthProvider, User } from './user.entity';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserResponseDto } from './dto/user-response.dto';
+import { userDisplayName } from './user-display-name';
 
 @Injectable()
 export class UsersService {
@@ -47,7 +48,7 @@ export class UsersService {
     return {
       id: user.id,
       email: user.email,
-      name: user.nickname ?? '',
+      name: userDisplayName(user),
       phone: user.phoneNumber,
       personalCode: user.personalCode,
       currentMode: user.currentMode,

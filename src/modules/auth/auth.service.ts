@@ -19,6 +19,7 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { WithdrawDto } from './dto/withdraw.dto';
 import { ensureExpertProfile } from '../expert-profiles/ensure-expert-profile';
+import { userDisplayName } from '../users/user-display-name';
 
 const APPLE_JWKS_URI = 'https://appleid.apple.com/auth/keys';
 const APPLE_ISSUER = 'https://appleid.apple.com';
@@ -129,13 +130,15 @@ export class AuthService {
     }
     const profile = (await profileRes.json()) as {
       id: number;
-      kakao_account?: { email?: string };
+      kakao_account?: { email?: string; profile?: { nickname?: string } };
+      properties?: { nickname?: string };
     };
 
     return this.findOrCreateSocialUser({
       provider: AuthProvider.KAKAO,
       socialId: String(profile.id),
       email: profile.kakao_account?.email ?? null,
+      name: profile.kakao_account?.profile?.nickname ?? profile.properties?.nickname ?? null,
     });
   }
 
@@ -160,6 +163,8 @@ export class AuthService {
       provider: AuthProvider.APPLE,
       socialId: String(payload.sub),
       email: (payload.email as string | undefined) ?? null,
+      // 애플은 이름을 토큰에 담지 않고 최초 로그인 시에만 클라이언트에 전달
+      name: dto.fullName?.trim() || null,
     });
   }
 
@@ -184,6 +189,7 @@ export class AuthService {
       provider: AuthProvider.GOOGLE,
       socialId: payload.sub,
       email: payload.email ?? null,
+      name: payload.name ?? null,
     });
   }
 
@@ -221,7 +227,7 @@ export class AuthService {
     }
 
     // unique 컬럼을 null로 해제해야 soft-delete 후 DB unique 제약 위반 없이 재가입 가능
-    await this.userRepository.update(userId, { nickname: null, email: null });
+    await this.userRepository.update(userId, { nickname: null, name: null, email: null });
     await this.refreshTokenRepository.delete({ userId });
     await this.userRepository.softDelete(userId);
   }
@@ -230,6 +236,7 @@ export class AuthService {
     provider: AuthProvider;
     socialId: string;
     email: string | null;
+    name: string | null;
   }): Promise<OAuthTokenResponseDto> {
     // withDeleted: true — 탈퇴(soft-delete)된 계정도 포함해 조회
     // soft-delete된 계정이면 재가입으로 간주하고 restore 처리
@@ -261,11 +268,18 @@ export class AuthService {
           email: params.email,
           authProvider: params.provider,
           socialId: params.socialId,
+          name: params.name,
           currentMode: UserMode.CUSTOMER,
           personalCode: await this.generatePersonalCode(),
         }),
       );
       isNewUser = true;
+    }
+
+    // 기존 가입자도 이름이 비어 있으면 채움 (name 컬럼 추가 전 가입자)
+    if (!user.name && params.name) {
+      await this.userRepository.update(user.id, { name: params.name });
+      user.name = params.name;
     }
 
     const tokens = await this.issueTokens(user);
@@ -295,7 +309,7 @@ export class AuthService {
     const authUser: AuthUserDto = {
       id: user.id,
       email: user.email ?? '',
-      name: user.nickname ?? '',
+      name: userDisplayName(user),
       personalCode: user.personalCode,
       currentMode: user.currentMode,
       socialProvider: user.authProvider,

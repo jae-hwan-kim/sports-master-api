@@ -35,6 +35,9 @@ export class ReviewResponseDto {
 
   @ApiPropertyOptional({ description: '리뷰 대상 명인 이름 (내가 쓴 리뷰 목록에서만 채움)', example: '김명인' })
   expertName?: string;
+
+  @ApiPropertyOptional({ description: '리뷰 대상 명인 대표 사진 (내가 쓴 리뷰 목록에서만 채움)', nullable: true })
+  expertAvatarUrl?: string | null;
 }
 
 export class PaginatedReviewsDto {

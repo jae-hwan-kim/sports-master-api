@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseBoolPipe,
@@ -14,6 +15,7 @@ import {
 import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { ApiDataResponse } from '../../common/decorators/api-data-response.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { MessageResponseDto } from '../auth/dto/auth-response.dto';
 import { CreateDiagnosisReviewDto } from './dto/create-diagnosis-review.dto';
 import {
   DeleteRequestResponseDto,
@@ -121,6 +123,13 @@ export class ReviewsController {
   @Patch(':id')
   updateReview(@Req() req: AuthenticatedRequest, @Param('id', ParseIntPipe) id: number, @Body() dto: UpdateReviewDto) {
     return this.reviewsService.updateReview(id, req.user.id, dto);
+  }
+
+  @ApiOperation({ summary: '리뷰 삭제 (고객 본인 리뷰만, 복구 불가)' })
+  @ApiDataResponse(MessageResponseDto)
+  @Delete(':id')
+  deleteReview(@Req() req: AuthenticatedRequest, @Param('id', ParseIntPipe) id: number) {
+    return this.reviewsService.deleteReview(id, req.user.id);
   }
 
   @ApiOperation({ summary: '리뷰 삭제 요청 (본인 리뷰만)' })

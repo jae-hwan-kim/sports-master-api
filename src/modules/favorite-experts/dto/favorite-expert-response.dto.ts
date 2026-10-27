@@ -4,8 +4,11 @@ export class FavoriteExpertItemDto {
   @ApiProperty({ description: '명인 프로필 ID', example: 5 })
   id: number;
 
-  @ApiProperty({ description: '이름', example: '김명인' })
+  @ApiProperty({ description: '표시 이름 (닉네임, 없으면 이름)', example: '김명인' })
   name: string;
+
+  @ApiPropertyOptional({ description: '소개글', example: '국가대표 상비군 출신 건강운동관리사입니다.' })
+  introduction: string | null;
 
   @ApiPropertyOptional({ description: '등급', example: 'gold' })
   grade: string | null;

@@ -7,8 +7,8 @@ import { ExpertListItemDto } from './dto/expert-list-item.dto';
 import { ExpertProfileResponseDto, UploadedFilesResponseDto } from './dto/expert-profile-response.dto';
 import { UpdateExpertProfileDto } from './dto/update-expert-profile.dto';
 import { ExpertProfile } from './expert-profile.entity';
-import { ensureExpertProfile } from './ensure-expert-profile';
-import { expertDisplayName } from './ensure-expert-profile';
+import { ensureExpertProfile, expertDisplayName } from './ensure-expert-profile';
+import { User } from '../users/user.entity';
 
 // 페이지네이션 도입 전 상한
 const EXPERT_LIST_LIMIT = 100;
@@ -92,6 +92,7 @@ export class ExpertProfilesService {
       name: expertDisplayName(ep),
       region: ep.region,
       representativeService: ep.representativeService,
+      introduction: ep.introduction,
       keywordTags: ep.keywordTags,
       imageUrl: ep.profileImageUrl ?? ep.portfolioImageUrls?.[0] ?? ep.imageUrls?.[0] ?? null,
       averageRating: Number(ep.averageRating),
@@ -167,11 +168,15 @@ export class ExpertProfilesService {
 
   private async toDto(profile: ExpertProfile): Promise<ExpertProfileResponseDto> {
     const topPercentile = await this.calcTopPercentile(profile.id, profile.totalReviewCount);
+    profile.user ??= (await this.expertProfileRepository.manager.findOne(User, {
+      where: { id: profile.userId },
+    }))!;
     return {
       id: profile.id,
       userId: profile.userId,
       region: profile.region,
       centerName: profile.centerName,
+      name: expertDisplayName(profile),
       representativeService: profile.representativeService,
       introduction: profile.introduction,
       kakaoOpenChatUrl: profile.kakaoOpenChatUrl,
