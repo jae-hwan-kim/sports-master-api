@@ -4,6 +4,7 @@ import { Not, Repository } from 'typeorm';
 import { CustomerProfile } from '../customer-profiles/customer-profile.entity';
 import { ExpertProfile } from '../expert-profiles/expert-profile.entity';
 import { Review } from '../reviews/review.entity';
+import { ReviewLinkVisit } from '../reviews/review-link-visit.entity';
 import { User } from '../users/user.entity';
 import { CreateDiagnosisRequestDto } from './dto/create-diagnosis-request.dto';
 import {
@@ -30,8 +31,9 @@ export class DiagnosesService {
     private readonly reviewRepository: Repository<Review>,
   ) {}
 
+  // 리뷰 작성 대상 = 진단요청한 명인 + 리뷰 링크로 방문한 명인, 본인 명인 제외
   async getMySent(userId: number): Promise<DiagnosisSentItemDto[]> {
-    const rows = await this.diagnosisRequestRepository
+    const requested = await this.diagnosisRequestRepository
       .createQueryBuilder('dr')
       .select('dr.expertProfileId', 'expertProfileId')
       .where('dr.customerId = :userId', { userId })
@@ -39,15 +41,22 @@ export class DiagnosesService {
       .distinct(true)
       .getRawMany<{ expertProfileId: number }>();
 
-    if (rows.length === 0) return [];
+    const visited = await this.diagnosisRequestRepository.manager
+      .getRepository(ReviewLinkVisit)
+      .find({ where: { customerId: userId }, select: { expertProfileId: true } });
 
-    const expertProfileIds = rows.map(r => r.expertProfileId);
+    const expertProfileIds = [
+      ...new Set([...requested.map(r => r.expertProfileId), ...visited.map(v => v.expertProfileId)]),
+    ];
+    if (expertProfileIds.length === 0) return [];
 
-    const experts = await this.expertProfileRepository
-      .createQueryBuilder('ep')
-      .leftJoinAndSelect('ep.user', 'user')
-      .whereInIds(expertProfileIds)
-      .getMany();
+    const experts = (
+      await this.expertProfileRepository
+        .createQueryBuilder('ep')
+        .leftJoinAndSelect('ep.user', 'user')
+        .whereInIds(expertProfileIds)
+        .getMany()
+    ).filter(ep => ep.userId !== userId);
 
     const writtenReviews = await this.reviewRepository
       .createQueryBuilder('r')

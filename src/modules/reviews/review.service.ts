@@ -14,6 +14,7 @@ import { ChatRoom } from '../chat-rooms/chat-room.entity';
 import { DiagnosisRequest, DiagnosisStatus } from '../diagnoses/diagnosis-request.entity';
 import { ExpertProfile } from '../expert-profiles/expert-profile.entity';
 import { Review } from './review.entity';
+import { ReviewLinkVisit } from './review-link-visit.entity';
 import { ReviewDeleteRequest, DeleteRequestStatus } from './review-delete-request.entity';
 import {
   DeleteRequestResponseDto,
@@ -75,13 +76,24 @@ export class ReviewsService {
       relations: { user: true },
     });
     if (!expert) throw new NotFoundException('명인 프로필이 없습니다.');
+    const isMine = expert.userId === userId;
+    // 링크로 방문한 고객 → 리뷰 작성 목록(my-sent)에 명인 추가 (본인 링크는 기록하지 않음)
+    if (!isMine) {
+      await this.reviewRepository.manager
+        .getRepository(ReviewLinkVisit)
+        .createQueryBuilder()
+        .insert()
+        .values({ customerId: userId, expertProfileId })
+        .orIgnore()
+        .execute();
+    }
     const existing = await this.reviewRepository.findOne({ where: { customerId: userId, expertProfileId } });
     return {
       expertProfileId,
       expertName: expertDisplayName(expert),
       expertAvatarUrl: expert.profileImageUrl ?? expert.portfolioImageUrls?.[0] ?? null,
       expertGrade: expert.expertGrade,
-      isMine: expert.userId === userId,
+      isMine,
       alreadyReviewed: !!existing,
     };
   }
