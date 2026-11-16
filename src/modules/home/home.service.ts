@@ -47,6 +47,7 @@ export class HomeService {
       region: expertProfile.region,
       centerName: expertProfile.centerName,
       name: expertDisplayName(expertProfile),
+      displayName: expertProfile.displayName,
       representativeService: expertProfile.representativeService,
       introduction: expertProfile.introduction,
       kakaoOpenChatUrl: expertProfile.kakaoOpenChatUrl,

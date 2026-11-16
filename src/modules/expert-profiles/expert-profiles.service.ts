@@ -8,7 +8,7 @@ import { ExpertProfileResponseDto, UploadedFilesResponseDto } from './dto/expert
 import { UpdateExpertProfileDto } from './dto/update-expert-profile.dto';
 import { ExpertProfile } from './expert-profile.entity';
 import { ensureExpertProfile, expertDisplayName } from './ensure-expert-profile';
-import { User } from '../users/user.entity';
+import { User, UserMode } from '../users/user.entity';
 
 // 페이지네이션 도입 전 상한
 const EXPERT_LIST_LIMIT = 100;
@@ -36,9 +36,16 @@ export class ExpertProfilesService {
     return this.toDto(saved);
   }
 
+  // 조회는 부작용 없이 동작 — 명인 모드 사용자만 프로필 행을 생성하고, 고객 모드는 없으면 404
   async getMe(userId: number): Promise<ExpertProfileResponseDto> {
-    const profile = await ensureExpertProfile(this.expertProfileRepository.manager, userId);
-    return this.toDto(profile);
+    const user = await this.expertProfileRepository.manager.findOne(User, { where: { id: userId } });
+    if (user?.currentMode === UserMode.EXPERT) {
+      const profile = await ensureExpertProfile(this.expertProfileRepository.manager, userId);
+      return this.toDto(profile);
+    }
+    const existing = await this.expertProfileRepository.findOne({ where: { userId } });
+    if (!existing) throw new NotFoundException('명인 프로필이 없습니다.');
+    return this.toDto(existing);
   }
 
   async getById(id: number): Promise<ExpertProfileResponseDto> {
@@ -107,9 +114,11 @@ export class ExpertProfilesService {
     if (dto.centerName !== undefined) profile.centerName = dto.centerName;
     if (dto.representativeService !== undefined) profile.representativeService = dto.representativeService;
     if (dto.bio !== undefined) profile.introduction = dto.bio;
+    if (dto.displayName !== undefined) profile.displayName = dto.displayName.trim() || null;
     if (dto.careerText !== undefined) profile.careerText = dto.careerText;
     if (dto.keywordTags !== undefined) profile.keywordTags = dto.keywordTags;
     if (dto.openChatUrl !== undefined) profile.kakaoOpenChatUrl = dto.openChatUrl;
+    if (dto.centerInfoUrl !== undefined) profile.centerInfoUrl = dto.centerInfoUrl || null;
     if (dto.centerPhone !== undefined) profile.centerPhone = dto.centerPhone || null;
 
     // 파일 필드: 우리 저장소 URL만 허용, 빠진 파일은 저장 후 R2에서 정리
@@ -177,6 +186,7 @@ export class ExpertProfilesService {
       region: profile.region,
       centerName: profile.centerName,
       name: expertDisplayName(profile),
+      displayName: profile.displayName,
       representativeService: profile.representativeService,
       introduction: profile.introduction,
       kakaoOpenChatUrl: profile.kakaoOpenChatUrl,

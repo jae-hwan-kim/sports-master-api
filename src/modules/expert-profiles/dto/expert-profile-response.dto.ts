@@ -19,6 +19,14 @@ export class ExpertProfileResponseDto {
   @ApiProperty({ description: '대표 서비스', example: '재활 트레이닝' })
   representativeService: string;
 
+  @ApiPropertyOptional({
+    type: String,
+    nullable: true,
+    description: '명인 전용 표시명 (없으면 null, 표시는 name 사용)',
+    example: '서초 재활 트레이너',
+  })
+  displayName: string | null;
+
   @ApiPropertyOptional({ description: '소개 텍스트', example: '10년 경력의 재활 전문 트레이너입니다.' })
   introduction: string | null;
 

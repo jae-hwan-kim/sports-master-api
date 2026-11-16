@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { ArrayMaxSize, IsArray, IsOptional, IsString, IsUrl, Matches, ValidateIf } from 'class-validator';
+import { ArrayMaxSize, IsArray, IsOptional, IsString, IsUrl, MaxLength, Matches, ValidateIf } from 'class-validator';
 
 export class UpdateExpertProfileDto {
   @ApiPropertyOptional({ description: '활동 지역', example: '서울 서초구' })
@@ -71,4 +71,23 @@ export class UpdateExpertProfileDto {
   @IsUrl()
   @IsOptional()
   openChatUrl?: string;
+
+  @ApiPropertyOptional({
+    description: '명인 표시명 (최대 20자), 빈 문자열이면 계정 닉네임으로 복귀',
+    example: '서초 재활 트레이너',
+  })
+  @ValidateIf((_, value) => value !== '')
+  @IsString()
+  @MaxLength(20)
+  @IsOptional()
+  displayName?: string;
+
+  @ApiPropertyOptional({
+    description: '센터정보 URL (예: 네이버 주소 URL), 빈 문자열이면 삭제',
+    example: 'https://naver.me/example',
+  })
+  @ValidateIf((_, value) => value !== '')
+  @IsUrl()
+  @IsOptional()
+  centerInfoUrl?: string;
 }

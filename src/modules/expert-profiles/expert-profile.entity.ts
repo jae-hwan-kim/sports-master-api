@@ -50,6 +50,10 @@ export class ExpertProfile {
   @Column({ nullable: true, type: 'text' })
   introduction: string | null;
 
+  // 명인 전용 표시명 — 없으면 계정 닉네임(User.nickname)으로 대체
+  @Column({ type: 'varchar', length: 20, nullable: true })
+  displayName: string | null;
+
   @Column({ nullable: true })
   kakaoOpenChatUrl: string | null;
 

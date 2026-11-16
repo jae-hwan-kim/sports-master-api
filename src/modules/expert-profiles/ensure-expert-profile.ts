@@ -15,7 +15,7 @@ export async function ensureExpertProfile(manager: EntityManager, userId: number
   return manager.findOneOrFail(ExpertProfile, { where: { userId }, relations: { user: true } });
 }
 
-// 명인 표시 이름 — 닉네임, 없으면 이름 (ep.user relation 로드 필요)
+// 명인 표시 이름 — 명인 전용 표시명, 없으면 계정 닉네임/이름 (ep.user relation 로드 필요)
 export function expertDisplayName(ep: ExpertProfile): string {
-  return userDisplayName(ep.user);
+  return ep.displayName || userDisplayName(ep.user);
 }
