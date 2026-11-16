@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { WinstonModule } from 'nest-winston';
 import { StorageModule } from './common/storage/storage.module';
 import { AppController } from './app.controller';
+import { RequestLogInterceptor } from './common/interceptors/request-log.interceptor';
 import { AppService } from './app.service';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { loggerConfig } from './config/logger.config';
@@ -67,6 +68,10 @@ import { UsersModule } from './modules/users/users.module';
     UsersModule,
   ],
   controllers: [AppController],
-  providers: [AppService, { provide: APP_INTERCEPTOR, useClass: ResponseInterceptor }],
+  providers: [
+    AppService,
+    { provide: APP_INTERCEPTOR, useClass: ResponseInterceptor },
+    { provide: APP_INTERCEPTOR, useClass: RequestLogInterceptor },
+  ],
 })
 export class AppModule {}
